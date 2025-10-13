@@ -21,6 +21,9 @@ jobs:
   update-data:
     runs-on: ubuntu-latest
     
+    permissions:
+      contents: write # Dê permissão de escrita ao bot para o conteúdo do repositório
+      
     steps:
       # 1. Faz checkout do repositório
       - name: Checkout repositório
