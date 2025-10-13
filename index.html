@@ -1,3 +1,4 @@
+<!-- EstatisticasRouboFurto_SSP\index.html -->
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -164,6 +165,24 @@
 
         <div class="filters">
             <label>
+                Município:
+                <select id="municipioFilter">
+                    <option value="">Todos</option>
+                </select>
+            </label>
+            <label>
+                Rubrica:
+                <select id="rubricaFilter">
+                    <option value="">Todas</option>
+                </select>
+            </label>
+            <label>
+                Período:
+                <select id="periodoFilter">
+                    <option value="">Todos</option>
+                </select>
+            </label>
+            <label>
                 Ano:
                 <select id="yearFilter">
                     <option value="">Todos</option>
@@ -214,6 +233,14 @@
             <h2 class="chart-title">Comparativo Anual</h2>
             <canvas id="yearlyChart"></canvas>
         </div>
+    </div>
+
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    
+    <div class="chart-container">
+        <h2 class="chart-title">Mapa de Ocorrências Recentes</h2>
+        <div id="map" style="height: 500px;"></div>
     </div>
 
     <script src="app.js"></script>
