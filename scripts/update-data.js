@@ -2,10 +2,11 @@ const axios = require('axios');
 const XLSX = require('xlsx');
 const fs = require('fs');
 const path = require('path');
-
+const date = new Date
+const THIS_YEAR = date.getFullYear();
 const DATA_DIR = '../data';
 const BASE_URL = 'https://www.ssp.sp.gov.br/assets/estatistica/transparencia/baseDados/veiculosSub';
-const ANOS = [2023, 2024, 2025]; // Adicione mais anos se necessário
+const ANOS = [THIS_YEAR, THIS_YEAR-1, THIS_YEAR-2]; // Adicione mais anos se necessário
 
 // Função para baixar e processar um XLSX
 async function processarAno(ano) {
