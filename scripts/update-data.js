@@ -11,15 +11,14 @@ const ANOS = [2023, 2024, 2025];  // Adicione mais anos se necessário
 async function processarAno(ano) {
   const url = `${BASE_URL}/VeiculosSubtraidos_${ano}.xlsx`;
   console.log(`Baixando ${url}...`);
-  
+
   try {
     const response = await axios.get(url, { responseType: 'arraybuffer' });
     const workbook = XLSX.read(response.data, { type: 'array' });
-    const sheetName = workbook.SheetNames[0];  // Assume primeira sheet
+    const sheetName = workbook.SheetNames[0];
     const worksheet = workbook.Sheets[sheetName];
     const jsonData = XLSX.utils.sheet_to_json(worksheet);
-    
-    console.log(`Processados ${jsonData.length} registros para ${ano}`);
+    console.log(`Processados ${jsonData.length} registros para ${ano}. Exemplo:`, jsonData.slice(0, 2)); // Loga os primeiros 2 registros
     return jsonData;
   } catch (error) {
     if (error.response?.status === 404) {
@@ -93,7 +92,7 @@ function agregarEstatisticas(todosDados) {
   });
 
   // Top 10 marcas (exemplo placeholder – ajuste)
-  stats.top10MarcasMaisRoubadas = Array.from({length: 10}, (_, i) => ({marca: `Marca ${i+1}`, count: 100 - i*10}));
+  stats.top10MarcasMaisRoubadas = Array.from({ length: 10 }, (_, i) => ({ marca: `Marca ${i + 1}`, count: 100 - i * 10 }));
 
   return stats;
 }
@@ -115,10 +114,26 @@ function gerarDadosMapa(todosDados) {
   return recentes;
 }
 
+function gerarTopBairros(todosDados) {
+  const bairros = {};
+  todosDados.forEach(row => {
+    const bairro = row.BAIRRO || 'DESCONHECIDO';
+    bairros[bairro] = (bairros[bairro] || 0) + 1;
+  });
+  return Object.entries(bairros)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 10)
+    .map(([bairro, count]) => ({ bairro, count }));
+}
+
+// No final de main()
+const topBairros = gerarTopBairros(todosDados);
+fs.writeFileSync(path.join(DATA_DIR, 'top-bairros.json'), JSON.stringify(topBairros, null, 2));
+
 // Main
 async function main() {
   console.log('Iniciando atualização de dados SSP...');
-  
+
   const todosDados = [];
   for (const ano of ANOS) {
     const dadosAno = await processarAno(ano);

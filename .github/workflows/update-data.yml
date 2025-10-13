@@ -30,12 +30,10 @@ jobs:
           cache: 'npm'
           cache-dependency-path: scripts/package-lock.json  # Aponta para o lock em scripts/
 
-      - name: Criar pasta scripts e data se não existirem
-        run: |
-          mkdir -p scripts
-          mkdir -p data
+      - name: Criar pasta data se não existir
+        run: mkdir -p data
 
-      - name: Inicializar package.json e instalar dependências em scripts/
+      - name: Instalar dependências em scripts/
         run: |
           cd scripts
           if [ ! -f package.json ]; then
