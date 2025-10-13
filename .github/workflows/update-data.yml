@@ -1,56 +1,87 @@
-# Projetos-Pessoais\0-Estatisticas_SSP_RouboFurto\.github\workflows\update-data.yml
-# Projetos-Pessoais\.github\workflows\update-data.yml
-
 name: Atualizar Dados SSP-SP
 
-# Quando executar
 on:
-  # 1. ATIVADOR TEMPORÁRIO: Roda no push. REMOVA DEPOIS DO TESTE!
-  # push:
-  #   branches:
-  #     - main # ou o nome da sua branch principal
+  # ATIVADOR TEMPORÁRIO PARA TESTES: Roda em push (COMENTE APÓS TESTAR!)
+  push:
+    branches:
+      - main
 
-  # 2. ATIVADOR MANUAL (Permanente)
+  # ATIVADOR MANUAL
   workflow_dispatch:
 
-  # 3. ATIVADOR AGENDADO (Permanente)
+  # ATIVADOR AGENDADO (mensal, dia 1 às 3h UTC ~ 0h BRT)
   schedule:
     - cron: '0 3 1 * *'
 
 jobs:
   update-data:
     runs-on: ubuntu-latest
-    
     permissions:
-      contents: write # Dê permissão de escrita ao bot para o conteúdo do repositório
-      
+      contents: write
+
     steps:
-      # 1. Faz checkout do repositório
       - name: Checkout repositório
-        uses: actions/checkout@v3
-        
-      # 2. Configura Node.js versão 18
+        uses: actions/checkout@v4  # Atualizado para v4
+
       - name: Setup Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4  # Atualizado para v4
         with:
           node-version: '18'
-          
-      # 3. Instala as dependências (puppeteer, xlsx)
-      - name: Instalar dependências
+          cache: 'npm'  # Cache para dependências
+
+      - name: Criar pasta scripts se não existir
+        run: |
+          mkdir -p scripts
+          mkdir -p data  # Garante que data/ existe
+
+      - name: Inicializar package.json em scripts/
         run: |
           cd scripts
-          npm install
-          
-      # 4. Executa o script de download e processamento com mais memória
-      - name: Baixar e processar dados da SSP
+          if [ ! -f package.json ]; then
+            npm init -y
+            npm install xlsx axios  # xlsx para Excel, axios para download
+          fi
+
+      - name: Baixar e processar dados da SSP (com logs)
         run: |
           cd scripts
           node --max-old-space-size=4096 update-data.js
-          
-      # 5. Commita os arquivos JSON gerados de volta para o repositório
+        env:
+          NODE_ENV: production
+
+      - name: Verificar JSONs gerados (Debug)
+        run: |
+          ls -la data/
+          echo "Conteúdo de estatisticas.json:"
+          head -n 20 data/estatisticas.json || echo "Arquivo vazio!"
+          echo "Conteúdo de mapa-ocorrencias.json:"
+          head -n 20 data/mapa-ocorrencias.json || echo "Arquivo vazio!"
+
       - name: Commit e push das mudanças
         run: |
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
           git add data/*.json
-          git diff --quiet && git diff --staged --quiet || (git commit -m "🤖 Atualização automática de dados - $(date +'%d/%m/%Y %H:%M')" && git push)
+          if git diff --staged --quiet; then
+            echo "Nenhuma mudança nos dados. Pulando commit."
+          else
+            git commit -m "🤖 Atualização automática de dados SSP - $(date +'%d/%m/%Y %H:%M')"
+            git push
+          fi
+
+  # OPCIONAL: Trigger deploy após update (descomente para automação completa)
+  # deploy-trigger:
+  #   needs: update-data  # Depende do job acima
+  #   runs-on: ubuntu-latest
+  #   if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+  #   steps:
+  #     - name: Trigger Deploy Workflow
+  #       uses: actions/github-script@v7
+  #       with:
+  #         script: |
+  #           github.rest.actions.createWorkflowDispatch({
+  #             owner: context.repo.owner,
+  #             repo: context.repo.repo,
+  #             workflow_id: 'deploy.yml',
+  #             ref: 'main'
+  #           })

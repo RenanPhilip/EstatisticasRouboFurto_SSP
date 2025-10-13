@@ -2,18 +2,24 @@ name: Deploy Frontend
 on:
   push:
     branches:
-      - main # Roda sempre que houver push na main (após o processamento de dados)
+      - main  # Roda em push na main (após update de dados)
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
     permissions:
-      pages: write # Permissão necessária para o deploy
-      id-token: write # Permissão necessária para o deploy
+      pages: write
+      id-token: write
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Verificar arquivos de dados (Debug)
+        run: |
+          ls -la data/ || echo "Pasta data/ não existe!"
+          cat data/estatisticas.json || echo "estatisticas.json vazio ou ausente"
+          cat data/mapa-ocorrencias.json || echo "mapa-ocorrencias.json vazio ou ausente"
 
       - name: Setup Pages
         uses: actions/configure-pages@v4
@@ -21,9 +27,7 @@ jobs:
       - name: Upload Artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          # Esta é a pasta que o GitHub Pages publicará. 
-          # O seu site (index.html, app.js) e seus dados (data) devem estar aqui.
-          path: '.' 
+          path: '.'
 
       - name: Deploy to GitHub Pages
         id: deployment
