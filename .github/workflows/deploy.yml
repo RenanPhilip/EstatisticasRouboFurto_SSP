@@ -1,0 +1,30 @@
+name: Deploy Frontend
+on:
+  push:
+    branches:
+      - main # Roda sempre que houver push na main (após o processamento de dados)
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write # Permissão necessária para o deploy
+      id-token: write # Permissão necessária para o deploy
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+
+      - name: Upload Artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          # Esta é a pasta que o GitHub Pages publicará. 
+          # O seu site (index.html, app.js) e seus dados (data) devem estar aqui.
+          path: '.' 
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
