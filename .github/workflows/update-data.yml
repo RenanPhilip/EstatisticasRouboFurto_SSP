@@ -28,7 +28,7 @@ jobs:
         with:
           node-version: '18'
           cache: 'npm'
-          cache-dependency-path: scripts/package-lock.json  # Aponta para o lock em scripts/
+          cache-dependency-path: scripts/package-lock.json  # Agora existe antes do setup
 
       - name: Criar pasta data se não existir
         run: mkdir -p data
@@ -36,11 +36,7 @@ jobs:
       - name: Instalar dependências em scripts/
         run: |
           cd scripts
-          if [ ! -f package.json ]; then
-            npm init -y
-            npm install xlsx axios --save  # Gera package-lock.json
-          fi
-          npm ci  # Usa package-lock.json para instalação consistente
+          npm ci  # Usa package-lock.json pré-existente
 
       - name: Baixar e processar dados da SSP (com logs)
         run: |
