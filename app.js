@@ -110,16 +110,17 @@ function atualizarCards() {
     const totalGeral = dadosEstatisticas.porRubrica['ROUBO DE VEÍCULO'] + dadosEstatisticas.porRubrica['FURTO DE VEÍCULO'] || 0 ;
 
     // 1. Atualiza o Total Geral (corresponde a 'totalGeral' no HTML)
-    document.getElementById('totalGeral').textContent = 
-        totalGeral.toLocaleString('pt-BR') || 0 ;
+    let totalGeralEL = totalGeral || 0 ;
+    document.getElementById('totalGeral').textContent = totalGeralEL.toLocaleString('pt-BR')
+        
 
     // 2. Atualiza o Total de Roubos
-    document.getElementById('totalRoubos').textContent =
-        dadosEstatisticas.porRubrica['ROUBO DE VEÍCULO'].toLocaleString('pt-BR') || 0 ;
+    let totalRoubosEL = dadosEstatisticas.porRubrica['ROUBO DE VEÍCULO'] || 0 ;
+    document.getElementById('totalRoubos').textContent = totalRoubosEL.toLocaleString('pt-BR');
     
     // 3. Atualiza o Total de Furtos
-    document.getElementById('totalFurtos').textContent =
-        dadosEstatisticas.porRubrica['FURTO DE VEÍCULO'].toLocaleString('pt-BR') || 0 ;
+    let totalFurtosEL = dadosEstatisticas.porRubrica['FURTO DE VEÍCULO'] || 0 ;
+    document.getElementById('totalFurtos').textContent = totalFurtosEL.toLocaleString('pt-BR');
     
     // 4. (Verificar se você ainda quer manter estes cards, se sim, o HTML precisa deles)
     // ATENÇÃO: Os próximos dois cards ('totalOcorrencias' e 'totalMunicipios') *não existem* no seu HTML atual.
