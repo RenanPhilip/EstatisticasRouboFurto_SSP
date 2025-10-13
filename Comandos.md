@@ -277,8 +277,8 @@ npm install
 
 ### Erro: "Permission denied" no Git
 ```bash
-git config --global user.email "seu-email@example.com"
-git config --global user.name "Seu Nome"
+git config --global user.email "rphiliper@gmail.com"
+git config --global user.name "Renan Ribeiro"
 ```
 
 ### Site não atualiza após push
