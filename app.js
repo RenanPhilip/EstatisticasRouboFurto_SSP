@@ -104,10 +104,28 @@ function popularFiltros() {
     });
 }
 
+// NO SEU app.js
 function atualizarCards() {
-    document.getElementById('totalOcorrencias').textContent = 
-        dadosEstatisticas.totalRegistros.toLocaleString('pt-BR');
+    // Calcula o Total Geral somando Roubos e Furtos
+    const totalGeral = dadosEstatisticas.porRubrica['ROUBO DE VEÍCULO'] + dadosEstatisticas.porRubrica['FURTO DE VEÍCULO'];
+
+    // 1. Atualiza o Total Geral (corresponde a 'totalGeral' no HTML)
+    document.getElementById('totalGeral').textContent = 
+        totalGeral.toLocaleString('pt-BR');
+
+    // 2. Atualiza o Total de Roubos
+    document.getElementById('totalRoubos').textContent =
+        dadosEstatisticas.porRubrica['ROUBO DE VEÍCULO'].toLocaleString('pt-BR');
     
+    // 3. Atualiza o Total de Furtos
+    document.getElementById('totalFurtos').textContent =
+        dadosEstatisticas.porRubrica['FURTO DE VEÍCULO'].toLocaleString('pt-BR');
+    
+    // 4. (Verificar se você ainda quer manter estes cards, se sim, o HTML precisa deles)
+    // ATENÇÃO: Os próximos dois cards ('totalOcorrencias' e 'totalMunicipios') *não existem* no seu HTML atual.
+    // Se você não for adicioná-los, DEVE apagá-los do app.js.
+
+    /*
     document.getElementById('totalMunicipios').textContent = 
         Object.keys(dadosEstatisticas.porMunicipio).length;
     
@@ -118,6 +136,7 @@ function atualizarCards() {
     const percAutoria = ((dadosEstatisticas.porAutoria.conhecida / 
         (dadosEstatisticas.porAutoria.conhecida + dadosEstatisticas.porAutoria.desconhecida)) * 100).toFixed(1);
     document.getElementById('autoriaConhecida').textContent = `${percAutoria}%`;
+    */
 }
 
 function criarTodosGraficos() {
