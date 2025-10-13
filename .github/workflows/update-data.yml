@@ -1,15 +1,10 @@
 name: Atualizar Dados SSP-SP
 
 on:
-  # ATIVADOR TEMPORÁRIO PARA TESTES (comente após testar)
   push:
     branches:
       - main
-
-  # ATIVADOR MANUAL
   workflow_dispatch:
-
-  # ATIVADOR AGENDADO (mensal, dia 1 às 3h UTC ~ 0h BRT)
   schedule:
     - cron: '0 3 1 * *'
 
@@ -18,6 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+    timeout-minutes: 60 # Limite de 1 hora
 
     steps:
       - name: Checkout repositório
@@ -38,20 +34,22 @@ jobs:
         with:
           node-version: '18'
           cache: 'npm'
-          cache-dependency-path: scripts/package-lock.json  # Deve funcionar agora
+          cache-dependency-path: scripts/package-lock.json
 
       - name: Criar pasta data se não existir
         run: mkdir -p data
 
-      - name: Instalar dependências em scripts/ (se necessário)
+      - name: Instalar dependências em scripts/
         run: |
           cd scripts
-          npm ci  # Usa package-lock.json existente
+          npm ci
 
       - name: Baixar e processar dados da SSP (com logs)
         run: |
           cd scripts
-          node --max-old-space-size=4096 update-data.js
+          echo "Iniciando processamento às $(date)"
+          node --max-old-space-size=8192 update-data.js
+          echo "Processamento concluído às $(date)"
         env:
           NODE_ENV: production
 
