@@ -1,7 +1,7 @@
 name: Atualizar Dados SSP-SP
 
 on:
-  # ATIVADOR TEMPORÁRIO PARA TESTES: Roda em push (COMENTE APÓS TESTAR!)
+  # ATIVADOR TEMPORÁRIO PARA TESTES (comente após testar)
   push:
     branches:
       - main
@@ -21,26 +21,28 @@ jobs:
 
     steps:
       - name: Checkout repositório
-        uses: actions/checkout@v4  # Atualizado para v4
+        uses: actions/checkout@v4
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4  # Atualizado para v4
+        uses: actions/setup-node@v4
         with:
           node-version: '18'
-          cache: 'npm'  # Cache para dependências
+          cache: 'npm'
+          cache-dependency-path: scripts/package-lock.json  # Aponta para o lock em scripts/
 
-      - name: Criar pasta scripts se não existir
+      - name: Criar pasta scripts e data se não existirem
         run: |
           mkdir -p scripts
-          mkdir -p data  # Garante que data/ existe
+          mkdir -p data
 
-      - name: Inicializar package.json em scripts/
+      - name: Inicializar package.json e instalar dependências em scripts/
         run: |
           cd scripts
           if [ ! -f package.json ]; then
             npm init -y
-            npm install xlsx axios  # xlsx para Excel, axios para download
+            npm install xlsx axios --save  # Gera package-lock.json
           fi
+          npm ci  # Usa package-lock.json para instalação consistente
 
       - name: Baixar e processar dados da SSP (com logs)
         run: |
@@ -68,20 +70,3 @@ jobs:
             git commit -m "🤖 Atualização automática de dados SSP - $(date +'%d/%m/%Y %H:%M')"
             git push
           fi
-
-  # OPCIONAL: Trigger deploy após update (descomente para automação completa)
-  # deploy-trigger:
-  #   needs: update-data  # Depende do job acima
-  #   runs-on: ubuntu-latest
-  #   if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
-  #   steps:
-  #     - name: Trigger Deploy Workflow
-  #       uses: actions/github-script@v7
-  #       with:
-  #         script: |
-  #           github.rest.actions.createWorkflowDispatch({
-  #             owner: context.repo.owner,
-  #             repo: context.repo.repo,
-  #             workflow_id: 'deploy.yml',
-  #             ref: 'main'
-  #           })
