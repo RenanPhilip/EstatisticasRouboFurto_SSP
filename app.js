@@ -152,7 +152,7 @@ function criarTodosGraficos() {
 }
 
 function criarGraficoTimeline() {
-    const ctx = document.getElementById('timelineChart').getContext('2d');
+    const ctx = document.getElementById('monthlyChart').getContext('2d');
     
     // Ordena por mês/ano
     const mesAnoOrdenado = Object.entries(dadosEstatisticas.porMesAno)
@@ -397,7 +397,7 @@ function criarGraficoCores() {
 }
 
 function criarGraficoMunicipios() {
-    const ctx = document.getElementById('municipiosChart').getContext('2d');
+    const ctx = document.getElementById('regionChart').getContext('2d');
     
     const municipios = Object.entries(dadosEstatisticas.porMunicipio)
         .sort((a, b) => b[1] - a[1])

@@ -1,160 +1,13 @@
-<!-- EstatisticasRouboFurto_SSP\index.html -->
 <!DOCTYPE html>
 <html lang="pt-BR">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Estatísticas de Roubos e Furtos de Veículos - SP</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            padding: 20px;
-        }
-
-        .container {
-            max-width: 1400px;
-            margin: 0 auto;
-        }
-
-        header {
-            background: white;
-            padding: 30px;
-            border-radius: 15px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-            margin-bottom: 30px;
-            text-align: center;
-        }
-
-        h1 {
-            color: #333;
-            font-size: 2.5em;
-            margin-bottom: 10px;
-        }
-
-        .subtitle {
-            color: #666;
-            font-size: 1.1em;
-        }
-
-        .update-info {
-            margin-top: 15px;
-            padding: 10px;
-            background: #f0f0f0;
-            border-radius: 8px;
-            font-size: 0.9em;
-            color: #555;
-        }
-
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 20px;
-            margin-bottom: 30px;
-        }
-
-        .stat-card {
-            background: white;
-            padding: 25px;
-            border-radius: 12px;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-            transition: transform 0.3s ease;
-        }
-
-        .stat-card:hover {
-            transform: translateY(-5px);
-        }
-
-        .stat-label {
-            font-size: 0.9em;
-            color: #666;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-bottom: 10px;
-        }
-
-        .stat-value {
-            font-size: 2.5em;
-            font-weight: bold;
-            color: #667eea;
-        }
-
-        .chart-container {
-            background: white;
-            padding: 30px;
-            border-radius: 12px;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-            margin-bottom: 30px;
-        }
-
-        .chart-title {
-            font-size: 1.5em;
-            color: #333;
-            margin-bottom: 20px;
-            padding-bottom: 10px;
-            border-bottom: 2px solid #667eea;
-        }
-
-        .filters {
-            background: white;
-            padding: 20px;
-            border-radius: 12px;
-            margin-bottom: 30px;
-            display: flex;
-            gap: 15px;
-            flex-wrap: wrap;
-            align-items: center;
-        }
-
-        select,
-        input {
-            padding: 10px 15px;
-            border: 2px solid #ddd;
-            border-radius: 8px;
-            font-size: 1em;
-            transition: border-color 0.3s;
-        }
-
-        select:focus,
-        input:focus {
-            outline: none;
-            border-color: #667eea;
-        }
-
-        .loading {
-            text-align: center;
-            padding: 50px;
-            color: white;
-            font-size: 1.5em;
-        }
-
-        .error {
-            background: #ff6b6b;
-            color: white;
-            padding: 20px;
-            border-radius: 12px;
-            margin: 20px 0;
-        }
-
-        @media (max-width: 768px) {
-            h1 {
-                font-size: 1.8em;
-            }
-
-            .stats-grid {
-                grid-template-columns: 1fr;
-            }
-        }
-    </style>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <link rel="stylesheet" href="./CSS/style.css">
 </head>
 
 <body>
@@ -168,6 +21,12 @@
         </header>
 
         <div class="filters">
+            <label>
+                Ano:
+                <select id="yearFilter">
+                    <option value="">Todos</option>
+                </select>
+            </label>
             <label>
                 Município:
                 <select id="municipioFilter">
@@ -186,29 +45,13 @@
                     <option value="">Todos</option>
                 </select>
             </label>
-            <label>
-                Ano:
-                <select id="yearFilter">
-                    <option value="">Todos</option>
-                </select>
-            </label>
-            <label>
-                Tipo:
-                <select id="typeFilter">
-                    <option value="todos">Todos</option>
-                    <option value="roubos">Roubos</option>
-                    <option value="furtos">Furtos</option>
-                </select>
-            </label>
-            <label>
-                Região:
-                <select id="regionFilter">
-                    <option value="">Todas</option>
-                </select>
-            </label>
         </div>
 
         <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-label">Total Geral</div>
+                <div class="stat-value" id="totalGeral">-</div>
+            </div>
             <div class="stat-card">
                 <div class="stat-label">Total de Roubos</div>
                 <div class="stat-value" id="totalRoubos">-</div>
@@ -218,36 +61,65 @@
                 <div class="stat-value" id="totalFurtos">-</div>
             </div>
             <div class="stat-card">
-                <div class="stat-label">Total Geral</div>
-                <div class="stat-value" id="totalGeral">-</div>
+                <div class="stat-label">Total de Municípios</div>
+                <div class="stat-value" id="totalMunicipios">-</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Percentual Flagrantes</div>
+                <div class="stat-value" id="totalFlagrantes">-</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Autoria Conhecida</div>
+                <div class="stat-value" id="autoriaConhecida">-</div>
             </div>
         </div>
 
         <div class="chart-container">
             <h2 class="chart-title">Evolução Mensal</h2>
-            <canvas id="timelineChart"></canvas>
+            <canvas id="monthlyChart"></canvas>
         </div>
 
         <div class="chart-container">
-            <h2 class="chart-title">Top 10 Regiões</h2>
+            <h2 class="chart-title">Ocorrências por Hora</h2>
+            <canvas id="hourChart"></canvas>
+        </div>
+
+        <div class="chart-container">
+            <h2 class="chart-title">Marcas Mais Roubadas</h2>
+            <canvas id="marcasChart"></canvas>
+        </div>
+
+        <div class="chart-container">
+            <h2 class="chart-title">Ocorrências por Dia da Semana</h2>
+            <canvas id="weekdayChart"></canvas>
+        </div>
+
+        <div class="chart-container">
+            <h2 class="chart-title">Tipos de Veículo</h2>
+            <canvas id="tipoVeiculoChart"></canvas>
+        </div>
+
+        <div class="chart-container">
+            <h2 class="chart-title">Cores dos Veículos</h2>
+            <canvas id="corChart"></canvas>
+        </div>
+
+        <div class="chart-container">
+            <h2 class="chart-title">Top 10 Municípios</h2>
             <canvas id="regionChart"></canvas>
         </div>
 
         <div class="chart-container">
-            <h2 class="chart-title">Comparativo Anual</h2>
-            <canvas id="yearlyChart"></canvas>
+            <h2 class="chart-title">Ocorrências por Período</h2>
+            <canvas id="periodoChart"></canvas>
         </div>
-    </div>
 
-    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
-    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-
-    <div class="chart-container">
-        <h2 class="chart-title">Mapa de Ocorrências Recentes</h2>
-        <div id="map" style="height: 500px;"></div>
+        <div class="chart-container">
+            <h2 class="chart-title">Mapa de Ocorrências Recentes</h2>
+            <div id="map"></div>
+        </div>
     </div>
 
     <script src="app.js"></script>
 </body>
-
 </html>
