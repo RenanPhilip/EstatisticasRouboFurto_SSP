@@ -23,20 +23,30 @@ jobs:
       - name: Checkout repositório
         uses: actions/checkout@v4
 
+      - name: Verificar e preparar scripts/
+        run: |
+          mkdir -p scripts
+          cd scripts
+          if [ ! -f package-lock.json ]; then
+            echo "package-lock.json não encontrado. Criando..."
+            npm init -y
+            npm install xlsx axios --save
+          fi
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '18'
           cache: 'npm'
-          cache-dependency-path: scripts/package-lock.json  # Agora existe antes do setup
+          cache-dependency-path: scripts/package-lock.json  # Deve funcionar agora
 
       - name: Criar pasta data se não existir
         run: mkdir -p data
 
-      - name: Instalar dependências em scripts/
+      - name: Instalar dependências em scripts/ (se necessário)
         run: |
           cd scripts
-          npm ci  # Usa package-lock.json pré-existente
+          npm ci  # Usa package-lock.json existente
 
       - name: Baixar e processar dados da SSP (com logs)
         run: |
