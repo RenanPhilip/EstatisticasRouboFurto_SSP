@@ -6,9 +6,9 @@ name: Atualizar Dados SSP-SP
 # Quando executar
 on:
   # 1. ATIVADOR TEMPORÁRIO: Roda no push. REMOVA DEPOIS DO TESTE!
-  push:
-    branches:
-      - main # ou o nome da sua branch principal
+  # push:
+  #   branches:
+  #     - main # ou o nome da sua branch principal
 
   # 2. ATIVADOR MANUAL (Permanente)
   workflow_dispatch:
