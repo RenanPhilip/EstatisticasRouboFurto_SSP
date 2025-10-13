@@ -1,0 +1,53 @@
+# Projetos-Pessoais\0-Estatisticas_SSP_RouboFurto\.github\workflows\update-data.yml
+# Projetos-Pessoais\.github\workflows\update-data.yml
+
+name: Atualizar Dados SSP-SP
+
+# Quando executar
+on:
+  # 1. ATIVADOR TEMPORÁRIO: Roda no push. REMOVA DEPOIS DO TESTE!
+  push:
+    branches:
+      - main # ou o nome da sua branch principal
+
+  # 2. ATIVADOR MANUAL (Permanente)
+  workflow_dispatch:
+
+  # 3. ATIVADOR AGENDADO (Permanente)
+  schedule:
+    - cron: '0 3 1 * *'
+
+jobs:
+  update-data:
+    runs-on: ubuntu-latest
+    
+    steps:
+      # 1. Faz checkout do repositório
+      - name: Checkout repositório
+        uses: actions/checkout@v3
+        
+      # 2. Configura Node.js versão 18
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          
+      # 3. Instala as dependências (puppeteer, xlsx)
+      - name: Instalar dependências
+        run: |
+          cd scripts
+          npm install
+          
+      # 4. Executa o script de download e processamento com mais memória
+      - name: Baixar e processar dados da SSP
+        run: |
+          cd scripts
+          node --max-old-space-size=4096 update-data.js
+          
+      # 5. Commita os arquivos JSON gerados de volta para o repositório
+      - name: Commit e push das mudanças
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add data/*.json
+          git diff --quiet && git diff --staged --quiet || (git commit -m "🤖 Atualização automática de dados - $(date +'%d/%m/%Y %H:%M')" && git push)

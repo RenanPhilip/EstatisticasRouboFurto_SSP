@@ -1,0 +1,28 @@
+# Node modules
+node_modules/
+package-lock.json
+
+# Arquivos temporários
+scripts/temp/*
+*.tmp
+*.log
+
+# Arquivos de sistema
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# IDEs
+.vscode/
+.idea/
+*.sublime-*
+
+# Arquivos Excel baixados localmente (não commitar)
+*.xlsx
+*.xls
+
+# Manter estrutura de pastas vazias
+!scripts/temp/.gitkeep
+!data/.gitkeep
