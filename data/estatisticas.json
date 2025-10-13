@@ -1,0 +1,24 @@
+{
+  "ultimaAtualizacao": "2025-10-13T15:07:32.279Z",
+  "totalRegistros": 0,
+  "porRubrica": {},
+  "porMunicipio": {},
+  "porPeriodo": {},
+  "porMesAno": {},
+  "porAno": {},
+  "porMes": {},
+  "porDiaSemana": {},
+  "porHora": {},
+  "porTipoVeiculo": {},
+  "porCorVeiculo": {},
+  "porAnoFabricacao": {},
+  "top10MarcasMaisRoubadas": [],
+  "porAutoria": {
+    "conhecida": 0,
+    "desconhecida": 0
+  },
+  "porFlagrante": {
+    "sim": 0,
+    "nao": 0
+  }
+}
