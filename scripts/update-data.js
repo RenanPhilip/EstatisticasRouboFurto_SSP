@@ -5,20 +5,21 @@ const path = require('path');
 
 const DATA_DIR = '../data';
 const BASE_URL = 'https://www.ssp.sp.gov.br/assets/estatistica/transparencia/baseDados/veiculosSub';
-const ANOS = [2023, 2024, 2025];  // Adicione mais anos se necessário
+const ANOS = [2023, 2024, 2025]; // Adicione mais anos se necessário
 
 // Função para baixar e processar um XLSX
 async function processarAno(ano) {
   const url = `${BASE_URL}/VeiculosSubtraidos_${ano}.xlsx`;
   console.log(`Baixando ${url}...`);
-
+  
   try {
     const response = await axios.get(url, { responseType: 'arraybuffer' });
     const workbook = XLSX.read(response.data, { type: 'array' });
-    const sheetName = workbook.SheetNames[0];
+    const sheetName = workbook.SheetNames[0]; // Assume primeira sheet
     const worksheet = workbook.Sheets[sheetName];
     const jsonData = XLSX.utils.sheet_to_json(worksheet);
-    console.log(`Processados ${jsonData.length} registros para ${ano}. Exemplo:`, jsonData.slice(0, 2)); // Loga os primeiros 2 registros
+    
+    console.log(`Processados ${jsonData.length} registros para ${ano}. Exemplo:`, jsonData.slice(0, 2));
     return jsonData;
   } catch (error) {
     if (error.response?.status === 404) {
@@ -41,9 +42,7 @@ function agregarEstatisticas(todosDados) {
     porMesAno: {},
     porHora: {},
     porDiaSemana: {},
-    porPeriodo: {  // Ex: 'Manhã', 'Tarde', etc. – ajuste baseado em hora
-      'Manhã': 0, 'Tarde': 0, 'Noite': 0, 'Madrugada': 0
-    },
+    porPeriodo: { 'Manhã': 0, 'Tarde': 0, 'Noite': 0, 'Madrugada': 0 },
     porTipoVeiculo: {},
     porCorVeiculo: {},
     porFlagrante: { sim: 0, nao: 0 },
@@ -53,7 +52,7 @@ function agregarEstatisticas(todosDados) {
 
   todosDados.forEach(row => {
     const rubrica = row.RUBRICA || 'DESCONHECIDA';
-    const dataStr = row.DATA_OCORRENCIA;  // Assume formato DD/MM/YYYY
+    const dataStr = row.DATA_OCORRENCIA; // Assume formato DD/MM/YYYY
     const ano = new Date(dataStr.split('/').reverse().join('-')).getFullYear();
     const municipio = row.MUNICIPIO || 'DESCONHECIDO';
     const mes = new Date(dataStr).getMonth() + 1;
@@ -62,11 +61,10 @@ function agregarEstatisticas(todosDados) {
     const diaSemana = ['domingo', 'segunda-feira', 'terça-feira', 'quarta-feira', 'quinta-feira', 'sexta-feira', 'sábado'][new Date(dataStr).getDay()];
     const tipoVeiculo = row.TIPO_VEICULO || 'DESCONHECIDO';
     const cor = row.COR_VEICULO || 'DESCONHECIDA';
-    const marca = row.MARCA || 'DESCONHECIDA';
+    const marca = row.MARCA || 'DESCONHECIDO';
     const flagrante = row.FLAGRANTE === 'SIM' ? 'sim' : 'nao';
     const autoria = row.AUTORIA === 'CONHECIDA' ? 'conhecida' : 'desconhecida';
 
-    // Contadores
     stats.porRubrica[rubrica] = (stats.porRubrica[rubrica] || 0) + 1;
     stats.porAno[ano] = (stats.porAno[ano] || 0) + 1;
     stats.porMunicipio[municipio] = (stats.porMunicipio[municipio] || 0) + 1;
@@ -76,7 +74,6 @@ function agregarEstatisticas(todosDados) {
     stats.porTipoVeiculo[tipoVeiculo] = (stats.porTipoVeiculo[tipoVeiculo] || 0) + 1;
     stats.porCorVeiculo[cor] = (stats.porCorVeiculo[cor] || 0) + 1;
 
-    // Período baseado em hora
     if (hora >= 6 && hora < 12) stats.porPeriodo['Manhã']++;
     else if (hora >= 12 && hora < 18) stats.porPeriodo['Tarde']++;
     else if (hora >= 18 && hora < 24) stats.porPeriodo['Noite']++;
@@ -85,35 +82,48 @@ function agregarEstatisticas(todosDados) {
     stats.porFlagrante[flagrante] = (stats.porFlagrante[flagrante] || 0) + 1;
     stats.porAutoria[autoria] = (stats.porAutoria[autoria] || 0) + 1;
 
-    // Top 10 marcas (só para roubos)
     if (rubrica.includes('ROUBO')) {
-      // Lógica simples para top10 (agregue em um Map e slice)
+      // Placeholder para top10MarcasMaisRoubadas (ajuste conforme necessário)
+      stats.top10MarcasMaisRoubadas.push({ marca, count: 1 }); // Simplificado
     }
   });
 
-  // Top 10 marcas (exemplo placeholder – ajuste)
-  stats.top10MarcasMaisRoubadas = Array.from({ length: 10 }, (_, i) => ({ marca: `Marca ${i + 1}`, count: 100 - i * 10 }));
+  // Ordena e limita top10MarcasMaisRoubadas
+  stats.top10MarcasMaisRoubadas = Object.values(
+    stats.top10MarcasMaisRoubadas.reduce((acc, curr) => {
+      acc[curr.marca] = (acc[curr.marca] || { marca: curr.marca, count: 0 });
+      acc[curr.marca].count += curr.count;
+      return acc;
+    }, {})
+  ).sort((a, b) => b.count - a.count).slice(0, 10);
 
   return stats;
 }
 
-// Gerar dados do mapa (amostra recente, com coords simuladas para SP)
+// Gerar dados do mapa (amostra recente)
 function gerarDadosMapa(todosDados) {
-  // Pega últimos 1000 registros
-  const recentes = todosDados.slice(-1000).map(row => ({
+  return todosDados.slice(-1000).map(row => ({
     rubrica: row.RUBRICA,
     bairro: row.BAIRRO,
     municipio: row.MUNICIPIO,
     marca: row.MARCA,
     tipo: row.TIPO_VEICULO,
     data: row.DATA_OCORRENCIA,
-    // Coords simuladas para SP (ajuste se Excel tiver lat/lng reais)
-    lat: -23.55 + (Math.random() - 0.5) * 0.1,
-    lng: -46.63 + (Math.random() - 0.5) * 0.1
+    lat: row.LAT || (-23.55 + (Math.random() - 0.5) * 0.1), // Simulado se não houver
+    lng: row.LNG || (-46.63 + (Math.random() - 0.5) * 0.1)  // Simulado se não houver
   }));
-  return recentes;
 }
 
+// Gerar ocorrências recentes
+function gerarOcorrenciasRecentes(todosDados) {
+  return todosDados.slice(-100).map(row => ({
+    rubrica: row.RUBRICA,
+    data: row.DATA_OCORRENCIA,
+    municipio: row.MUNICIPIO
+  }));
+}
+
+// Gerar top bairros
 function gerarTopBairros(todosDados) {
   const bairros = {};
   todosDados.forEach(row => {
@@ -126,14 +136,23 @@ function gerarTopBairros(todosDados) {
     .map(([bairro, count]) => ({ bairro, count }));
 }
 
-// No final de main()
-const topBairros = gerarTopBairros(todosDados);
-fs.writeFileSync(path.join(DATA_DIR, 'top-bairros.json'), JSON.stringify(topBairros, null, 2));
+// Gerar top delegacias (placeholder - ajuste com dados reais se disponíveis)
+function gerarTopDelegacias(todosDados) {
+  const delegacias = {};
+  todosDados.forEach(row => {
+    const delegacia = row.DELEGACIA || 'DESCONHECIDA'; // Ajuste o campo conforme o Excel
+    delegacias[delegacia] = (delegacias[delegacia] || 0) + 1;
+  });
+  return Object.entries(delegacias)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 10)
+    .map(([delegacia, count]) => ({ delegacia, count }));
+}
 
 // Main
 async function main() {
   console.log('Iniciando atualização de dados SSP...');
-
+  
   const todosDados = [];
   for (const ano of ANOS) {
     const dadosAno = await processarAno(ano);
@@ -147,10 +166,16 @@ async function main() {
 
   const estatisticas = agregarEstatisticas(todosDados);
   const mapaOcorrencias = gerarDadosMapa(todosDados);
+  const ocorrenciasRecentes = gerarOcorrenciasRecentes(todosDados);
+  const topBairros = gerarTopBairros(todosDados);
+  const topDelegacias = gerarTopDelegacias(todosDados);
 
   // Salvar JSONs
   fs.writeFileSync(path.join(DATA_DIR, 'estatisticas.json'), JSON.stringify(estatisticas, null, 2));
   fs.writeFileSync(path.join(DATA_DIR, 'mapa-ocorrencias.json'), JSON.stringify(mapaOcorrencias, null, 2));
+  fs.writeFileSync(path.join(DATA_DIR, 'ocorrencias-recentes.json'), JSON.stringify(ocorrenciasRecentes, null, 2));
+  fs.writeFileSync(path.join(DATA_DIR, 'top-bairros.json'), JSON.stringify(topBairros, null, 2));
+  fs.writeFileSync(path.join(DATA_DIR, 'top-delegacias.json'), JSON.stringify(topDelegacias, null, 2));
 
   console.log(`Gerados: ${estatisticas.totalRegistros} registros totais.`);
   console.log('Atualização concluída!');
