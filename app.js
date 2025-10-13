@@ -107,19 +107,19 @@ function popularFiltros() {
 // NO SEU app.js
 function atualizarCards() {
     // Calcula o Total Geral somando Roubos e Furtos
-    const totalGeral = dadosEstatisticas.porRubrica['ROUBO DE VEÍCULO'] + dadosEstatisticas.porRubrica['FURTO DE VEÍCULO'];
+    const totalGeral = dadosEstatisticas.porRubrica['ROUBO DE VEÍCULO'] + dadosEstatisticas.porRubrica['FURTO DE VEÍCULO'] || 0 ;
 
     // 1. Atualiza o Total Geral (corresponde a 'totalGeral' no HTML)
     document.getElementById('totalGeral').textContent = 
-        totalGeral.toLocaleString('pt-BR');
+        totalGeral.toLocaleString('pt-BR') || 0 ;
 
     // 2. Atualiza o Total de Roubos
     document.getElementById('totalRoubos').textContent =
-        dadosEstatisticas.porRubrica['ROUBO DE VEÍCULO'].toLocaleString('pt-BR');
+        dadosEstatisticas.porRubrica['ROUBO DE VEÍCULO'].toLocaleString('pt-BR') || 0 ;
     
     // 3. Atualiza o Total de Furtos
     document.getElementById('totalFurtos').textContent =
-        dadosEstatisticas.porRubrica['FURTO DE VEÍCULO'].toLocaleString('pt-BR');
+        dadosEstatisticas.porRubrica['FURTO DE VEÍCULO'].toLocaleString('pt-BR') || 0 ;
     
     // 4. (Verificar se você ainda quer manter estes cards, se sim, o HTML precisa deles)
     // ATENÇÃO: Os próximos dois cards ('totalOcorrencias' e 'totalMunicipios') *não existem* no seu HTML atual.
