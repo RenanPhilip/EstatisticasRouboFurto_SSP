@@ -13,7 +13,7 @@ const COLUNAS_NECESSARIAS = [
   'TIPO_VEICULO', 'COR_VEICULO', 'HORA', 'FLAGRANTE', 'AUTORIA', 'LAT', 'LNG', 'DELEGACIA'
 ];
 
-// Função para carregar estado (anos processados e última atualização)
+// Função para carregar estado
 function carregarEstado() {
   const statePath = path.join(DATA_DIR, 'state.json');
   if (fs.existsSync(statePath)) {
@@ -28,42 +28,32 @@ function salvarEstado(state) {
 }
 
 // Função para baixar e processar um XLSX com retries
-async function processarAno(ano, maxRetries = 3) {
+async function processarAno(ano, maxRetries = 5) {
   const url = `${BASE_URL}/VeiculosSubtraidos_${ano}.xlsx`;
   console.log(`Baixando ${url}...`);
 
   for (let tentativa = 1; tentativa <= maxRetries; tentativa++) {
     try {
-      const response = await axios.get(url, { responseType: 'arraybuffer', timeout: 60000 }); // 60s timeout
+      const response = await axios.get(url, { responseType: 'arraybuffer', timeout: 120000 }); // 120s timeout
       const workbook = XLSX.read(response.data, { type: 'array' });
       const sheetName = workbook.SheetNames[0];
       const worksheet = workbook.Sheets[sheetName];
 
-      // Ler todas as linhas e filtrar colunas necessárias
-      const jsonData = XLSX.utils.sheet_to_json(worksheet, { range: 1 }) // Ignora cabeçalho
+      const jsonData = XLSX.utils.sheet_to_json(worksheet, { range: 1 })
         .map(row => {
           const filteredRow = {};
           COLUNAS_NECESSARIAS.forEach(col => {
             filteredRow[col] = row[col] || null;
           });
           return filteredRow;
+        })
+        .sort((a, b) => {
+          const dataA = a.DATA_OCORRENCIA ? new Date(a.DATA_OCORRENCIA.split('/').reverse().join('-')) : new Date(0);
+          const dataB = b.DATA_OCORRENCIA ? new Date(b.DATA_OCORRENCIA.split('/').reverse().join('-')) : new Date(0);
+          return dataB - dataA; // Ordena por data descendente
         });
 
-      if (jsonData.length === 0) return [];
-
-      // Verificar ordem das datas (primeira e última linha)
-      const dataPrimeira = jsonData[0].DATA_OCORRENCIA ? new Date(jsonData[0].DATA_OCORRENCIA.split('/').reverse().join('-')) : new Date(0);
-      const dataUltima = jsonData[jsonData.length - 1].DATA_OCORRENCIA ? new Date(jsonData[jsonData.length - 1].DATA_OCORRENCIA.split('/').reverse().join('-')) : new Date(0);
-      const ordemDescendente = dataPrimeira > dataUltima;
-
-      // Ordenar por data descendente
-      jsonData.sort((a, b) => {
-        const dataA = a.DATA_OCORRENCIA ? new Date(a.DATA_OCORRENCIA.split('/').reverse().join('-')) : new Date(0);
-        const dataB = b.DATA_OCORRENCIA ? new Date(b.DATA_OCORRENCIA.split('/').reverse().join('-')) : new Date(0);
-        return dataB - dataA;
-      });
-
-      console.log(`Processados ${jsonData.length} registros para ${ano}. Ordem original: ${ordemDescendente ? 'descendente' : 'ascendente'}. Exemplo:`, jsonData.slice(0, 2));
+      console.log(`Processados ${jsonData.length} registros para ${ano}. Exemplo:`, jsonData.slice(0, 2));
       return jsonData;
     } catch (error) {
       if (tentativa === maxRetries) {
@@ -74,17 +64,17 @@ async function processarAno(ano, maxRetries = 3) {
         console.error(`Erro ao processar ${ano} após ${maxRetries} tentativas:`, error.message);
         return [];
       }
-      console.log(`Tentativa ${tentativa} falhou para ${ano}. Tentando novamente em 10s...`);
-      await new Promise(resolve => setTimeout(resolve, 10000)); // Aguarda 10s antes de retry
+      console.log(`Tentativa ${tentativa} falhou para ${ano}. Tentando novamente em 15s...`);
+      await new Promise(resolve => setTimeout(resolve, 15000)); // Aguarda 15s antes de retry
     }
   }
 }
 
-// Processar e salvar em blocos de 1000 linhas
-function processarEmBlocos(dadosTotais, blocoSize = 1000) {
+// Processar e salvar em blocos
+function processarEmBlocos(dadosTotais, ano) {
   const resultados = { estatisticas: [], mapa: [], recentes: [], bairros: [], delegacias: [] };
-  for (let i = 0; i < dadosTotais.length; i += blocoSize) {
-    const bloco = dadosTotais.slice(i, i + blocoSize);
+  for (let i = 0; i < dadosTotais.length; i += 1000) {
+    const bloco = dadosTotais.slice(i, i + 1000);
     const estatisticasParciais = agregarEstatisticas(bloco);
     resultados.estatisticas.push(estatisticasParciais);
 
@@ -100,13 +90,14 @@ function processarEmBlocos(dadosTotais, blocoSize = 1000) {
     const delegaciasParciais = gerarTopDelegacias(bloco);
     resultados.delegacias.push(...delegaciasParciais);
 
-    // Salvar incrementalmente
-    fs.writeFileSync(path.join(DATA_DIR, 'estatisticas.json'), JSON.stringify(estatisticasParciais, null, 2));
-    fs.writeFileSync(path.join(DATA_DIR, 'mapa-ocorrencias.json'), JSON.stringify(resultados.mapa, null, 2));
-    fs.writeFileSync(path.join(DATA_DIR, 'ocorrencias-recentes.json'), JSON.stringify(resultados.recentes, null, 2));
-    fs.writeFileSync(path.join(DATA_DIR, 'top-bairros.json'), JSON.stringify(resultados.bairros, null, 2));
-    fs.writeFileSync(path.join(DATA_DIR, 'top-delegacias.json'), JSON.stringify(resultados.delegacias, null, 2));
-    console.log(`Bloco ${i / blocoSize + 1} processado e salvo. Total registros: ${i + bloco.length}`);
+    // Salvar incrementalmente com sufixo por ano
+    const basePath = path.join(DATA_DIR, `${ano}_`);
+    fs.writeFileSync(`${basePath}estatisticas.json`, JSON.stringify(estatisticasParciais, null, 2));
+    fs.writeFileSync(`${basePath}mapa-ocorrencias.json`, JSON.stringify(resultados.mapa, null, 2));
+    fs.writeFileSync(`${basePath}ocorrencias-recentes.json`, JSON.stringify(resultados.recentes, null, 2));
+    fs.writeFileSync(`${basePath}top-bairros.json`, JSON.stringify(resultados.bairros, null, 2));
+    fs.writeFileSync(`${basePath}top-delegacias.json`, JSON.stringify(resultados.delegacias, null, 2));
+    console.log(`Bloco ${i / 1000 + 1} para ${ano} processado e salvo. Total registros: ${i + bloco.length}`);
   }
   return resultados;
 }
@@ -178,7 +169,7 @@ function agregarEstatisticas(dados) {
   return stats;
 }
 
-// Gerar dados do mapa (amostra recente)
+// Gerar dados do mapa
 function gerarDadosMapa(dados) {
   return dados.slice(0, 1000).map(row => ({
     rubrica: row.RUBRICA,
@@ -187,9 +178,8 @@ function gerarDadosMapa(dados) {
     marca: row.MARCA,
     tipo: row.TIPO_VEICULO,
     data: row.DATA_OCORRENCIA,
-    // A primeira coordenada (-15.79...) é a latitude, a segunda (-47.82...) é a longitude
-    lat: row.LAT || -15.7925835891468, 
-    lng: row.LNG || -47.82216279342462
+    lat: row.LAT || -15.7925835891468, // Latitude padrão (Brasília aproximada)
+    lng: row.LNG || -47.82216279342462 // Longitude padrão (Brasília aproximada)
   }));
 }
 
@@ -234,7 +224,6 @@ async function main() {
 
   const state = carregarEstado();
   const mesAtual = new Date().getMonth() + 1; // 1-12
-  const anoAtual = new Date().getFullYear(); // 2025
   const ultimaAtualizacao = state.ultimaAtualizacao ? new Date(state.ultimaAtualizacao) : null;
   const mesUltima = ultimaAtualizacao ? ultimaAtualizacao.getMonth() + 1 : 0;
 
@@ -250,26 +239,19 @@ async function main() {
     return;
   }
 
-  const todosDados = [];
   for (const ano of anosParaProcessar) {
     const dadosAno = await processarAno(ano);
-    todosDados.push(...dadosAno);
+    if (dadosAno.length > 0) {
+      processarEmBlocos(dadosAno, ano);
+    }
   }
-
-  if (todosDados.length === 0) {
-    console.error('Nenhum dado novo processado.');
-    process.exit(1);
-  }
-
-  // Processar em blocos
-  processarEmBlocos(todosDados);
 
   // Atualizar estado
   state.anosProcessados = [...new Set([...state.anosProcessados, ...anosParaProcessar])];
   state.ultimaAtualizacao = new Date().toISOString();
   salvarEstado(state);
 
-  console.log(`Atualização concluída! Total de registros processados: ${todosDados.length}`);
+  console.log(`Atualização concluída!`);
 }
 
 main().catch(console.error);

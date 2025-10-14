@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
-    timeout-minutes: 60 # Limite de 1 hora
+    timeout-minutes: 120 # Aumentado para 2 horas
 
     steps:
       - name: Checkout repositório
@@ -56,10 +56,10 @@ jobs:
       - name: Verificar JSONs gerados (Debug)
         run: |
           ls -la data/
-          echo "Conteúdo de estatisticas.json:"
-          head -n 20 data/estatisticas.json || echo "Arquivo vazio!"
-          echo "Conteúdo de mapa-ocorrencias.json:"
-          head -n 20 data/mapa-ocorrencias.json || echo "Arquivo vazio!"
+          for file in data/*_*.json; do
+            echo "Conteúdo de $file:"
+            head -n 20 "$file" || echo "Arquivo vazio ou inexistente!"
+          done
 
       - name: Commit e push das mudanças
         run: |
