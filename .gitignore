@@ -4,6 +4,7 @@ package-lock.json
 
 # Arquivos temporários
 scripts/temp/*
+scripts/node_modules/
 *.tmp
 *.log
 
