@@ -20,10 +20,10 @@
   "author": "Renan Ribeiro <rphiliper@gmail.com>",
   "license": "MIT",
   "repository": {
-  "type": "git",
-  "url": "https://github.com/RenanPhilip/EstatisticasRouboFurto_SSP.git",
+    "type": "git",
+    "url": "https://github.com/RenanPhilip/EstatisticasRouboFurto_SSP.git",
   },
-  
+
   "dependencies": {
     "axios": "^1.7.2",
     "papaparse": "^5.5.3",
