@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
-    timeout-minutes: 240 # Aumentado para 4 horas para o primeiro carregamento
+    timeout-minutes: 240
 
     steps:
       - name: Checkout repositório
@@ -21,12 +21,12 @@ jobs:
 
       - name: Verificar e preparar scripts/
         run: |
-          mkdir -p scripts/temp scripts/temp/csv data
+          mkdir -p scripts/temp data
           cd scripts
           if [ ! -f package-lock.json ]; then
             echo "package-lock.json não encontrado. Criando..."
             npm init -y
-            npm install xlsx axios papaparse --save
+            npm install xlsx axios --save
           fi
 
       - name: Setup Node.js
@@ -35,9 +35,6 @@ jobs:
           node-version: '18'
           cache: 'npm'
           cache-dependency-path: scripts/package-lock.json
-
-      - name: Criar pasta data se não existir
-        run: mkdir -p data
 
       - name: Instalar dependências em scripts/
         run: |

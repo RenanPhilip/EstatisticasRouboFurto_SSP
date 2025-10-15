@@ -5,14 +5,33 @@
   "main": "update-data.js",
   "scripts": {
     "update": "node update-data.js",
-    "test": "node test-local.js"
+    "test": "node test-local.js",
+    "start": "node update-data.js"
   },
+  "keywords": [
+    "ssp",
+    "segurança",
+    "veículos",
+    "roubos",
+    "furtos",
+    "são paulo"
+  ],
+
+  "author": "Renan Ribeiro <rphiliper@gmail.com>",
+  "license": "MIT",
+  "repository": {
+  "type": "git",
+  "url": "https://github.com/RenanPhilip/EstatisticasRouboFurto_SSP.git",
+
   "dependencies": {
-    "xlsx": "^0.18.5",
     "axios": "^1.7.2",
-    "papaparse": "^5.4.1"
+    "papaparse": "^5.5.3",
+    "xlsx": "^0.18.5"
   },
+
+  "devDependencies": {},
   "engines": {
     "node": ">=18.0.0"
-  }
+  },
+  "optionalDependencies": {}
 }

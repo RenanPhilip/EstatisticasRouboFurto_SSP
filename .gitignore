@@ -27,3 +27,8 @@ Thumbs.db
 # Manter estrutura de pastas vazias
 !scripts/temp/.gitkeep
 !data/.gitkeep
+
+# Arquivos de teste
+Estructute.txt
+scripts/temp/*.csv
+scripts/temp/*.xlsx

@@ -1,402 +1,402 @@
 [
   {
     "bairro": "CENTRO",
-    "count": 10648
-  },
-  {
-    "bairro": "RURAL",
-    "count": 2789
+    "count": 62884
   },
   {
     "bairro": "DESCONHECIDO",
-    "count": 2621
+    "count": 16455
+  },
+  {
+    "bairro": "RURAL",
+    "count": 16326
   },
   {
     "bairro": "AREA RURAL",
-    "count": 2041
+    "count": 11424
   },
   {
     "bairro": "SAO MATEUS",
-    "count": 1909
-  },
-  {
-    "bairro": "SAPOPEMBA",
-    "count": 1837
-  },
-  {
-    "bairro": "SACOMA",
-    "count": 1595
+    "count": 10653
   },
   {
     "bairro": "IPIRANGA",
-    "count": 1547
+    "count": 10539
+  },
+  {
+    "bairro": "SAPOPEMBA",
+    "count": 10420
   },
   {
     "bairro": "ITAQUERA",
-    "count": 1338
+    "count": 8591
   },
   {
-    "bairro": "CIDADE TIRADENTES",
-    "count": 1206
-  },
-  {
-    "bairro": "JABAQUARA",
-    "count": 1198
-  },
-  {
-    "bairro": "SAO LUCAS",
-    "count": 1194
-  },
-  {
-    "bairro": "VILA PRUDENTE",
-    "count": 1116
+    "bairro": "SACOMA",
+    "count": 8558
   },
   {
     "bairro": "TATUAPE",
-    "count": 1102
+    "count": 7970
   },
   {
-    "bairro": "CIDADE ADEMAR",
-    "count": 1088
+    "bairro": "CIDADE TIRADENTES",
+    "count": 7700
   },
   {
-    "bairro": "GRAJAU",
-    "count": 1066
+    "bairro": "SAO LUCAS",
+    "count": 7407
   },
   {
-    "bairro": "CAPAO REDONDO",
-    "count": 1016
+    "bairro": "VILA PRUDENTE",
+    "count": 7387
   },
   {
-    "bairro": "ITAIM PAULISTA",
-    "count": 974
-  },
-  {
-    "bairro": "SANTO AMARO",
-    "count": 956
+    "bairro": "JABAQUARA",
+    "count": 7294
   },
   {
     "bairro": "SANTANA",
-    "count": 952
-  },
-  {
-    "bairro": "CUMBICA",
-    "count": 930
-  },
-  {
-    "bairro": "SAO RAFAEL",
-    "count": 900
-  },
-  {
-    "bairro": "VILA MARIANA",
-    "count": 889
-  },
-  {
-    "bairro": "VILA MATILDE",
-    "count": 888
-  },
-  {
-    "bairro": "PIRITUBA",
-    "count": 877
-  },
-  {
-    "bairro": "VILA MARIA",
-    "count": 869
-  },
-  {
-    "bairro": "CAMPO LIMPO",
-    "count": 866
-  },
-  {
-    "bairro": "JARAGUA",
-    "count": 863
-  },
-  {
-    "bairro": "PIMENTAS",
-    "count": 861
-  },
-  {
-    "bairro": "IGUATEMI",
-    "count": 843
-  },
-  {
-    "bairro": "JARDIM ANGELA",
-    "count": 842
-  },
-  {
-    "bairro": "AGUA RASA",
-    "count": 811
+    "count": 6604
   },
   {
     "bairro": "VILA FORMOSA",
-    "count": 800
+    "count": 6576
+  },
+  {
+    "bairro": "VILA MARIANA",
+    "count": 6344
+  },
+  {
+    "bairro": "SANTO AMARO",
+    "count": 6161
+  },
+  {
+    "bairro": "VILA MATILDE",
+    "count": 6091
+  },
+  {
+    "bairro": "CAPAO REDONDO",
+    "count": 6059
+  },
+  {
+    "bairro": "GRAJAU",
+    "count": 5982
+  },
+  {
+    "bairro": "CIDADE ADEMAR",
+    "count": 5970
+  },
+  {
+    "bairro": "VILA MARIA",
+    "count": 5956
+  },
+  {
+    "bairro": "AGUA RASA",
+    "count": 5951
+  },
+  {
+    "bairro": "CAMPO LIMPO",
+    "count": 5890
+  },
+  {
+    "bairro": "CUMBICA",
+    "count": 5799
+  },
+  {
+    "bairro": "ITAIM PAULISTA",
+    "count": 5720
+  },
+  {
+    "bairro": "JARDIM ANGELA",
+    "count": 5689
+  },
+  {
+    "bairro": "PIRITUBA",
+    "count": 5566
   },
   {
     "bairro": "PENHA",
-    "count": 797
+    "count": 5502
   },
   {
-    "bairro": "CAMPO GRANDE",
-    "count": 786
+    "bairro": "IGUATEMI",
+    "count": 5229
   },
   {
-    "bairro": "GUAIANASES",
-    "count": 781
+    "bairro": "SAO RAFAEL",
+    "count": 5171
   },
   {
-    "bairro": "CIDADE LIDER",
-    "count": 777
-  },
-  {
-    "bairro": "JARDIM COLINA",
-    "count": 763
+    "bairro": "PIMENTAS",
+    "count": 5136
   },
   {
     "bairro": "LAPA",
-    "count": 753
+    "count": 5056
   },
   {
-    "bairro": "JD SÃO LUIS",
-    "count": 718
+    "bairro": "JARAGUA",
+    "count": 5000
   },
   {
-    "bairro": "PARQUE DO CARMO",
-    "count": 710
+    "bairro": "GUAIANASES",
+    "count": 4926
   },
   {
-    "bairro": "MOOCA",
-    "count": 690
-  },
-  {
-    "bairro": "SAUDE",
-    "count": 685
+    "bairro": "CAMPO GRANDE",
+    "count": 4803
   },
   {
     "bairro": "CARRAO",
-    "count": 675
+    "count": 4684
   },
   {
-    "bairro": "BRASILANDIA",
-    "count": 659
+    "bairro": "MOOCA",
+    "count": 4633
+  },
+  {
+    "bairro": "CIDADE LIDER",
+    "count": 4615
+  },
+  {
+    "bairro": "SAUDE",
+    "count": 4542
+  },
+  {
+    "bairro": "JD SÃO LUIS",
+    "count": 4532
   },
   {
     "bairro": "CIDADE DUTRA",
-    "count": 659
+    "count": 4505
+  },
+  {
+    "bairro": "JARDIM COLINA",
+    "count": 4377
   },
   {
     "bairro": "ARICANDUVA",
-    "count": 646
+    "count": 4363
   },
   {
-    "bairro": "VILA JACUI",
-    "count": 633
-  },
-  {
-    "bairro": "BELA VISTA",
-    "count": 630
-  },
-  {
-    "bairro": "PEDREIRA",
-    "count": 628
-  },
-  {
-    "bairro": "RIO PEQUENO",
-    "count": 621
-  },
-  {
-    "bairro": "TREMEMBE",
-    "count": 613
+    "bairro": "PARQUE DO CARMO",
+    "count": 4237
   },
   {
     "bairro": "PINHEIROS",
-    "count": 608
+    "count": 4183
   },
   {
-    "bairro": "VILA LEOPOLDINA",
-    "count": 582
+    "bairro": "BELA VISTA",
+    "count": 3919
   },
   {
-    "bairro": "RAPOSO TAVARES",
-    "count": 572
+    "bairro": "BRASILANDIA",
+    "count": 3864
   },
   {
-    "bairro": "ARTUR ALVIM",
-    "count": 569
+    "bairro": "VILA JACUI",
+    "count": 3826
   },
   {
-    "bairro": "JOSE BONIFACIO",
-    "count": 568
+    "bairro": "RIO PEQUENO",
+    "count": 3812
   },
   {
-    "bairro": "ITAIM BIBI",
-    "count": 558
-  },
-  {
-    "bairro": "LAJEADO",
-    "count": 538
-  },
-  {
-    "bairro": "VILA CURUCA",
-    "count": 536
-  },
-  {
-    "bairro": "FREGUESIA DO O",
-    "count": 535
-  },
-  {
-    "bairro": "SAO MIGUEL",
-    "count": 530
-  },
-  {
-    "bairro": "TABOAO",
-    "count": 529
-  },
-  {
-    "bairro": "CANGAIBA",
-    "count": 519
+    "bairro": "PEDREIRA",
+    "count": 3789
   },
   {
     "bairro": "PERDIZES",
-    "count": 516
+    "count": 3757
+  },
+  {
+    "bairro": "RAPOSO TAVARES",
+    "count": 3727
   },
   {
     "bairro": "SAO DOMINGOS",
-    "count": 515
+    "count": 3722
   },
   {
-    "bairro": "VILA ANDRADE",
-    "count": 493
+    "bairro": "FREGUESIA DO O",
+    "count": 3703
   },
   {
-    "bairro": "CAMPO BELO",
-    "count": 489
+    "bairro": "TREMEMBE",
+    "count": 3657
   },
   {
-    "bairro": "VILA GUILHERME",
-    "count": 475
+    "bairro": "ITAIM BIBI",
+    "count": 3557
   },
   {
-    "bairro": "JARDIM PAULISTA",
-    "count": 472
+    "bairro": "ARTUR ALVIM",
+    "count": 3533
   },
   {
-    "bairro": "JARDIM HELENA",
-    "count": 472
-  },
-  {
-    "bairro": "TABOÃO",
-    "count": 468
-  },
-  {
-    "bairro": "TUCURUVI",
-    "count": 455
+    "bairro": "VILA LEOPOLDINA",
+    "count": 3435
   },
   {
     "bairro": "VILA SONIA",
-    "count": 454
+    "count": 3288
   },
   {
-    "bairro": "PARELHEIROS",
-    "count": 444
+    "bairro": "VILA GUILHERME",
+    "count": 3276
   },
   {
-    "bairro": "DISTRITO INDUSTRIAL",
-    "count": 442
+    "bairro": "VILA CURUCA",
+    "count": 3254
   },
   {
-    "bairro": "CASA VERDE",
-    "count": 435
+    "bairro": "LAJEADO",
+    "count": 3231
   },
   {
-    "bairro": "BONSUCESSO",
-    "count": 431
+    "bairro": "VILA ANDRADE",
+    "count": 3215
   },
   {
-    "bairro": "BUTANTA",
-    "count": 430
+    "bairro": "TABOAO",
+    "count": 3212
   },
   {
-    "bairro": "JAGUARE",
-    "count": 429
+    "bairro": "JOSE BONIFACIO",
+    "count": 3190
+  },
+  {
+    "bairro": "CAMPO BELO",
+    "count": 3136
+  },
+  {
+    "bairro": "JARDIM PAULISTA",
+    "count": 3055
+  },
+  {
+    "bairro": "JARDIM HELENA",
+    "count": 3052
+  },
+  {
+    "bairro": "SAO MIGUEL",
+    "count": 3011
+  },
+  {
+    "bairro": "CANGAIBA",
+    "count": 2971
   },
   {
     "bairro": "VILA MEDEIROS",
-    "count": 422
+    "count": 2962
   },
   {
-    "bairro": "ZONA RURAL",
-    "count": 422
+    "bairro": "DISTRITO INDUSTRIAL",
+    "count": 2957
   },
   {
-    "bairro": "ELDORADO",
-    "count": 406
+    "bairro": "CASA VERDE",
+    "count": 2903
+  },
+  {
+    "bairro": "BONSUCESSO",
+    "count": 2886
   },
   {
     "bairro": "RUDGE RAMOS",
-    "count": 393
+    "count": 2872
   },
   {
     "bairro": "CONCEICAO",
-    "count": 389
+    "count": 2802
   },
   {
-    "bairro": "PIRAJUSSARA",
-    "count": 387
+    "bairro": "TUCURUVI",
+    "count": 2793
   },
   {
-    "bairro": "CARANDIRU",
-    "count": 386
+    "bairro": "BUTANTA",
+    "count": 2746
   },
   {
-    "bairro": "CACHOEIRINHA",
-    "count": 374
+    "bairro": "PARELHEIROS",
+    "count": 2695
   },
   {
-    "bairro": "PONTE RASA",
-    "count": 364
+    "bairro": "JAGUARE",
+    "count": 2594
   },
   {
-    "bairro": "BAETA NEVES",
-    "count": 360
-  },
-  {
-    "bairro": "LIMAO",
-    "count": 359
-  },
-  {
-    "bairro": "JARDIM BELA VISTA",
-    "count": 357
-  },
-  {
-    "bairro": "ERMELINO MATARAZZO",
-    "count": 355
-  },
-  {
-    "bairro": "BOM RETIRO",
-    "count": 350
-  },
-  {
-    "bairro": "ASSUNÇÃO",
-    "count": 347
-  },
-  {
-    "bairro": "LIBERDADE",
-    "count": 346
+    "bairro": "ZONA RURAL",
+    "count": 2592
   },
   {
     "bairro": "JACANA",
-    "count": 340
+    "count": 2530
+  },
+  {
+    "bairro": "ERMELINO MATARAZZO",
+    "count": 2498
+  },
+  {
+    "bairro": "LIMAO",
+    "count": 2471
+  },
+  {
+    "bairro": "LIBERDADE",
+    "count": 2414
   },
   {
     "bairro": "BARRA FUNDA",
-    "count": 338
+    "count": 2400
+  },
+  {
+    "bairro": "ELDORADO",
+    "count": 2352
   },
   {
     "bairro": "CAMBUCI",
-    "count": 336
+    "count": 2330
   },
   {
-    "bairro": "JARDIM ZAIRA",
-    "count": 327
+    "bairro": "TABOÃO",
+    "count": 2320
+  },
+  {
+    "bairro": "CACHOEIRINHA",
+    "count": 2255
+  },
+  {
+    "bairro": "ANHANGUERA",
+    "count": 2254
+  },
+  {
+    "bairro": "ASSUNÇÃO",
+    "count": 2246
+  },
+  {
+    "bairro": "VILA ASSUNÇÃO",
+    "count": 2227
+  },
+  {
+    "bairro": "SOCORRO",
+    "count": 2201
+  },
+  {
+    "bairro": "MORUMBI",
+    "count": 2131
+  },
+  {
+    "bairro": "BELEM",
+    "count": 2130
+  },
+  {
+    "bairro": "CARANDIRU",
+    "count": 2117
+  },
+  {
+    "bairro": "JAGUARA",
+    "count": 2116
   }
 ]
