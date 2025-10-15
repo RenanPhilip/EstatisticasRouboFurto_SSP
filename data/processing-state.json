@@ -1,0 +1,42 @@
+{
+  "mesesProcessados": {
+    "2020-01": {
+      "dataProcessamento": "2025-10-15T21:03:19.600Z"
+    },
+    "2020-12": {
+      "dataProcessamento": "2025-10-15T21:03:19.600Z"
+    },
+    "2021-01": {
+      "dataProcessamento": "2025-10-15T21:03:19.600Z"
+    },
+    "2021-12": {
+      "dataProcessamento": "2025-10-15T21:03:19.600Z"
+    },
+    "2022-01": {
+      "dataProcessamento": "2025-10-15T21:03:19.600Z"
+    },
+    "2022-12": {
+      "dataProcessamento": "2025-10-15T21:03:19.600Z"
+    },
+    "2023-01": {
+      "dataProcessamento": "2025-10-15T21:03:19.600Z"
+    },
+    "2023-12": {
+      "dataProcessamento": "2025-10-15T21:03:19.600Z"
+    },
+    "2024-01": {
+      "dataProcessamento": "2025-10-15T21:03:19.600Z"
+    },
+    "2024-12": {
+      "dataProcessamento": "2025-10-15T21:03:19.601Z"
+    },
+    "2025-01": {
+      "dataProcessamento": "2025-10-15T21:03:19.601Z"
+    },
+    "2025-09": {
+      "dataProcessamento": "2025-10-15T21:03:19.601Z"
+    }
+  },
+  "ultimaAtualizacao": "2025-10-15T21:03:19.600Z",
+  "primeiraExecucao": false
+}
