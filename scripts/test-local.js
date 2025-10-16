@@ -194,8 +194,11 @@ function processarCSV(ano, mes) {
 }
 
 async function main() {
-  console.log('🧪 Teste Local - Gerando JSONs Iniciais (TODOS OS MESES - DECRESCENTE)\n');
-  console.log(`📅 Processando até ${String(MES_ATUAL).padStart(2, '0')}/${ANO_ATUAL}...\n`);
+  console.log('==========================================');
+  console.log('  TESTE LOCAL - Gerando JSONs');
+  console.log('==========================================\n');
+  console.log(`Data Atual: ${String(MES_ATUAL).padStart(2, '0')}/${ANO_ATUAL}`);
+  console.log(`Processando ate: ${String(MES_ATUAL).padStart(2, '0')}/${ANO_ATUAL}\n`);
 
   if (!fs.existsSync(DATA_DIR)) {
     fs.mkdirSync(DATA_DIR, { recursive: true });
@@ -226,7 +229,7 @@ async function main() {
 
   for (const { ano, mes } of meses) {
     const anoMesStr = `${ano}-${String(mes).padStart(2, '0')}`;
-    console.log(`📂 ${anoMesStr}...`);
+    console.log(`${anoMesStr}...`);
     
     const resultado = await processarCSV(ano, mes);
     
@@ -234,7 +237,7 @@ async function main() {
       const filePath = path.join(DATA_DIR, `${anoAtualProcesso}_dados-completos.json`);
       fs.writeFileSync(filePath, JSON.stringify(dadosAnoAtual, null, 2));
       const sizeMB = (JSON.stringify(dadosAnoAtual).length / 1024 / 1024).toFixed(2);
-      console.log(`   💾 Salvo ${anoAtualProcesso}_dados-completos.json (${sizeMB} MB - ${dadosAnoAtual.length.toLocaleString('pt-BR')} registros)`);
+      console.log(`  Salvo: ${anoAtualProcesso}_dados-completos.json (${sizeMB} MB - ${dadosAnoAtual.length.toLocaleString('pt-BR')} registros)\n`);
       
       dadosAnoAtual = [];
       if (global.gc) global.gc();
@@ -243,7 +246,7 @@ async function main() {
     anoAtualProcesso = ano;
 
     if (resultado.registros.length > 0) {
-      console.log(`   ✅ ${resultado.registros.length} registros`);
+      console.log(`  OK: ${resultado.registros.length} registros`);
       
       dadosAnoAtual.push(...resultado.registros);
       statsGlobal.totalRegistros += resultado.registros.length;
@@ -269,7 +272,7 @@ async function main() {
 
       state.mesesProcessados[anoMesStr] = { dataProcessamento: new Date().toISOString() };
     } else {
-      console.log(`   ⚠️ Nenhum dado`);
+      console.log(`  VAZIO`);
     }
   }
 
@@ -277,7 +280,7 @@ async function main() {
     const filePath = path.join(DATA_DIR, `${anoAtualProcesso}_dados-completos.json`);
     fs.writeFileSync(filePath, JSON.stringify(dadosAnoAtual, null, 2));
     const sizeMB = (JSON.stringify(dadosAnoAtual).length / 1024 / 1024).toFixed(2);
-    console.log(`   💾 Salvo ${anoAtualProcesso}_dados-completos.json (${sizeMB} MB - ${dadosAnoAtual.length.toLocaleString('pt-BR')} registros)`);
+    console.log(`  Salvo: ${anoAtualProcesso}_dados-completos.json (${sizeMB} MB - ${dadosAnoAtual.length.toLocaleString('pt-BR')} registros)\n`);
   }
 
   statsGlobal.top10MarcasMaisRoubadas = Object.entries(topMarcas)
@@ -295,22 +298,36 @@ async function main() {
     .slice(0, 50)
     .map(([municipio, count]) => ({ municipio, count }));
 
-  console.log(`\n💾 Salvando arquivos agregados...`);
+  console.log('Salvando agregados...\n');
 
   fs.writeFileSync(path.join(DATA_DIR, 'estatisticas.json'), JSON.stringify(statsGlobal, null, 2));
-  console.log(`   ✅ estatisticas.json (${(JSON.stringify(statsGlobal).length / 1024).toFixed(2)} KB)`);
+  console.log(`  OK: estatisticas.json`);
 
   fs.writeFileSync(path.join(DATA_DIR, 'mapa-ocorrencias.json'), JSON.stringify(mapaGlobal, null, 2));
-  console.log(`   ✅ mapa-ocorrencias.json (${(JSON.stringify(mapaGlobal).length / 1024).toFixed(2)} KB - ${mapaGlobal.length.toLocaleString('pt-BR')} pontos)`);
+  console.log(`  OK: mapa-ocorrencias.json (${mapaGlobal.length} pontos)`);
 
   fs.writeFileSync(path.join(DATA_DIR, 'ocorrencias-recentes.json'), JSON.stringify(recentesGlobal, null, 2));
-  console.log(`   ✅ ocorrencias-recentes.json (${(JSON.stringify(recentesGlobal).length / 1024).toFixed(2)} KB)`);
+  console.log(`  OK: ocorrencias-recentes.json`);
 
   fs.writeFileSync(path.join(DATA_DIR, 'top-bairros.json'), JSON.stringify(topBairros, null, 2));
-  console.log(`   ✅ top-bairros.json`);
+  console.log(`  OK: top-bairros.json`);
 
   fs.writeFileSync(path.join(DATA_DIR, 'top-delegacias.json'), JSON.stringify(topMunicipios, null, 2));
-  console.log(`   ✅ top-delegacias.json`);
+  console.log(`  OK: top-delegacias.json`);
 
   fs.writeFileSync(path.join(DATA_DIR, 'processing-state.json'), JSON.stringify(state, null, 2));
-  console.log(`   ✅
+  console.log(`  OK: processing-state.json`);
+
+  console.log(`\n==========================================`);
+  console.log(`TOTAIS:`);
+  console.log(`  Registros: ${statsGlobal.totalRegistros.toLocaleString('pt-BR')}`);
+  console.log(`  Municipios: ${Object.keys(statsGlobal.porMunicipio).length}`);
+  console.log(`  Meses processados: ${Object.keys(state.mesesProcessados).length}`);
+  console.log(`  Pontos no mapa: ${mapaGlobal.length.toLocaleString('pt-BR')}`);
+  console.log(`==========================================\n`);
+}
+
+main().catch(err => {
+  console.error('ERRO:', err.message);
+  process.exit(1);
+});
