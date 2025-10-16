@@ -69,3 +69,10 @@ jobs:
             git commit -m "🤖 Atualização automática de dados SSP - $(date +'%d/%m/%Y %H:%M')"
             git push
           fi
+      - name: Instalar Git LFS
+        run: |
+          curl -s https://packagecloud.io/install/repositories/github/git-lfs/script.deb.sh | bash
+          apt-get update
+          apt-get install git-lfs
+          git lfs install
+          git lfs track "data/*_dados-completos.json"
