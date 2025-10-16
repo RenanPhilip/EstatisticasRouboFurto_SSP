@@ -1,4 +1,4 @@
-// update-data.js - ALINHADO COM test-local.js (DADOS IMUTÁVEIS + ÚLTIMOS 2 MESES)
+// update-data.js - PARA GITHUB ACTIONS (Não reatualiza dados completos do LFS)
 const axios = require('axios');
 const XLSX = require('xlsx');
 const fs = require('fs');
@@ -23,20 +23,53 @@ const COLUNAS_ALTERNATIVAS = {
   'DESC_COR_VEICULO': ['DESCR_COR_VEICULO']
 };
 
+// ⭐ NÃO carrega dados completos (estão em LFS)
 function carregarEstado() {
   try {
-    const data = fs.readFileSync('data/processing-state.json', 'utf8');
-    console.log('Conteúdo bruto de processing-state.json:', data);
-    return JSON.parse(data);
+    const statePath = path.join(DATA_DIR, 'processing-state.json');
+    
+    if (!fs.existsSync(statePath)) {
+      console.log('📂 Arquivo de estado não encontrado. Criando novo...');
+      return { 
+        mesesProcessados: {}, 
+        ultimaAtualizacao: null, 
+        usandoLFS: true,
+        primeiraExecucaoComGitHub: true 
+      };
+    }
+
+    const conteudo = fs.readFileSync(statePath, 'utf8');
+    
+    // Ignora ponteiros LFS para state (é pequeno, não deveria estar em LFS)
+    if (conteudo.includes('git-lfs') || conteudo.includes('version https://git-lfs')) {
+      console.warn('⚠️  processing-state.json é ponteiro LFS');
+      return { 
+        mesesProcessados: {}, 
+        ultimaAtualizacao: null,
+        usandoLFS: true,
+        primeiraExecucaoComGitHub: true 
+      };
+    }
+
+    const state = JSON.parse(conteudo);
+    console.log(`✅ Estado carregado: ${Object.keys(state.mesesProcessados).length} meses processados`);
+    return state;
+    
   } catch (error) {
-    console.error('Erro ao carregar estado:', error.message);
-    console.log('Conteúdo bruto ou erro:', data || 'Arquivo vazio ou inacessível');
-    return { mesesProcessados: {}, ultimaAtualizacao: null, primeiraExecucao: true };
+    console.error('❌ Erro ao carregar estado:', error.message);
+    return { 
+      mesesProcessados: {}, 
+      ultimaAtualizacao: null,
+      usandoLFS: true,
+      primeiraExecucaoComGitHub: true 
+    };
   }
 }
 
 function salvarEstado(state) {
-  fs.writeFileSync(path.join(DATA_DIR, 'processing-state.json'), JSON.stringify(state, null, 2));
+  const statePath = path.join(DATA_DIR, 'processing-state.json');
+  fs.writeFileSync(statePath, JSON.stringify(state, null, 2));
+  console.log(`💾 Estado salvo em ${statePath}`);
 }
 
 function limparConteudo(conteudo) {
@@ -78,23 +111,29 @@ function getColumnValue(row, col) {
 function processarXLSX(ano, mes, xlsxPath) {
   return new Promise((resolve) => {
     if (!fs.existsSync(xlsxPath)) {
+      console.log(`   ⚠️  Arquivo não encontrado: ${xlsxPath}`);
       resolve({ ano, mes, registros: [] });
       return;
     }
 
-    console.log(`   📄 Convertendo ${ano}.xlsx para CSV...`);
-    const workbook = XLSX.readFile(xlsxPath);
-    const sheetName = workbook.SheetNames[0];
-    const worksheet = workbook.Sheets[sheetName];
-    const csvData = XLSX.utils.sheet_to_csv(worksheet, { FS: ';' });
+    try {
+      console.log(`   📄 Convertendo ${ano}.xlsx para CSV...`);
+      const workbook = XLSX.readFile(xlsxPath);
+      const sheetName = workbook.SheetNames[0];
+      const worksheet = workbook.Sheets[sheetName];
+      const csvData = XLSX.utils.sheet_to_csv(worksheet, { FS: ';' });
 
-    const csvPath = path.join(CSV_DIR, `VeiculosSubtraidos_${ano}.csv`);
-    if (!fs.existsSync(CSV_DIR)) {
-      fs.mkdirSync(CSV_DIR, { recursive: true });
+      const csvPath = path.join(CSV_DIR, `VeiculosSubtraidos_${ano}.csv`);
+      if (!fs.existsSync(CSV_DIR)) {
+        fs.mkdirSync(CSV_DIR, { recursive: true });
+      }
+      fs.writeFileSync(csvPath, csvData);
+
+      processarCSV(ano, mes, csvPath).then(resolve);
+    } catch (error) {
+      console.error(`   ❌ Erro ao converter XLSX: ${error.message}`);
+      resolve({ ano, mes, registros: [] });
     }
-    fs.writeFileSync(csvPath, csvData);
-
-    processarCSV(ano, mes, csvPath).then(resolve);
   });
 }
 
@@ -147,13 +186,17 @@ function processarCSV(ano, mes, csvPath) {
       complete: () => {
         resolve({ ano, mes, registros });
       },
-      error: () => resolve({ ano, mes, registros: [] })
+      error: (err) => {
+        console.error(`   ❌ Erro ao processar CSV: ${err.message}`);
+        resolve({ ano, mes, registros: [] });
+      }
     });
   });
 }
 
 async function main() {
-  console.log('🔄 Atualizando dados SSP...\n');
+  console.log('🔄 GITHUB ACTIONS - Atualizando dados SSP\n');
+  console.log('ℹ️  Nota: Dados históricos em LFS não serão reatualizados\n');
 
   if (!fs.existsSync(DATA_DIR)) {
     fs.mkdirSync(DATA_DIR, { recursive: true });
@@ -169,29 +212,20 @@ async function main() {
   const mesAnterior = mesAtual === 1 ? 12 : mesAtual - 1;
   const anoAnterior = mesAnterior === 12 ? anoAtual - 1 : anoAtual;
 
-  // Apenas processa últimos 2 meses (atual + anterior)
+  // ⭐ APENAS últimos 2 meses (não toca nos dados históricos do LFS)
   const mesesParaProcessar = [
     { ano: anoAtual, mes: mesAtual },
     { ano: anoAnterior, mes: mesAnterior }
   ];
 
-  // Dados acumulados por ano
-  const dadosAnoAtual = {};
+  // Incrementais apenas (não concatena com LFS)
+  const dadosIncrementais = {};
 
-  console.log(`📅 Período de atualização: ${anoAnterior}-${String(mesAnterior).padStart(2, '0')} até ${anoAtual}-${String(mesAtual).padStart(2, '0')}\n`);
+  console.log(`📅 Processando: ${anoAnterior}-${String(mesAnterior).padStart(2, '0')} até ${anoAtual}-${String(mesAtual).padStart(2, '0')}\n`);
 
   for (const { ano, mes } of mesesParaProcessar) {
     const anoMesStr = `${ano}-${String(mes).padStart(2, '0')}`;
-    const filePathDados = path.join(DATA_DIR, `${ano}_dados-completos.json`);
 
-    // Verifica se arquivo de dados do ano já existe
-    if (fs.existsSync(filePathDados)) {
-      console.log(`📂 ${anoMesStr}`);
-      console.log(`   ⏭️  ${ano}_dados-completos.json já existe (dados imutáveis). Pulando download.`);
-      continue;
-    }
-
-    // Arquivo NÃO existe, precisa processar
     const fileName = `VeiculosSubtraidos_${ano}.xlsx`;
     const xlsxPath = path.join(__dirname, 'temp', fileName);
     const url = `${BASE_URL}/${fileName}`;
@@ -201,21 +235,24 @@ async function main() {
       console.log(`   📥 Baixando ${ano}...`);
       const response = await axios.get(url, { responseType: 'arraybuffer', timeout: 180000 });
       fs.writeFileSync(xlsxPath, response.data);
-      console.log(`   ✅ Download concluído`);
+      console.log(`   ✅ Download concluído (${(response.data.length / 1024 / 1024).toFixed(2)} MB)`);
 
       const resultado = await processarXLSX(ano, mes, xlsxPath);
 
       if (resultado.registros.length > 0) {
-        console.log(`   ✅ ${resultado.registros.length} registros processados para ${anoMesStr}`);
+        console.log(`   ✅ ${resultado.registros.length} registros processados`);
 
-        // Acumula dados do ano
-        if (!dadosAnoAtual[ano]) {
-          dadosAnoAtual[ano] = [];
+        // Armazena apenas incrementais
+        if (!dadosIncrementais[ano]) {
+          dadosIncrementais[ano] = [];
         }
-        dadosAnoAtual[ano].push(...resultado.registros);
+        dadosIncrementais[ano].push(...resultado.registros);
 
         // Atualiza estado
-        state.mesesProcessados[anoMesStr] = { dataProcessamento: agora.toISOString() };
+        state.mesesProcessados[anoMesStr] = { 
+          dataProcessamento: agora.toISOString(),
+          registros: resultado.registros.length
+        };
       } else {
         console.log(`   ⚠️  Nenhum dado para ${anoMesStr}`);
       }
@@ -224,30 +261,33 @@ async function main() {
     }
   }
 
-  // Salva dados novos de anos ainda não processados
-  if (Object.keys(dadosAnoAtual).length > 0) {
-    console.log(`\n💾 Salvando dados de novos anos...\n`);
+  // ⭐ Salva APENAS incrementais (pequenos)
+  if (Object.keys(dadosIncrementais).length > 0) {
+    console.log(`\n💾 Salvando incrementais (últimos 2 meses)...\n`);
     
-    for (const [ano, dados] of Object.entries(dadosAnoAtual)) {
-      const filePath = path.join(DATA_DIR, `${ano}_dados-completos.json`);
-      fs.writeFileSync(filePath, JSON.stringify(dados, null, 2));
+    for (const [ano, dados] of Object.entries(dadosIncrementais)) {
+      // Arquivo separado para incrementais deste mês
+      const mesAtualStr = String(mesAtual).padStart(2, '0');
+      const incrementalPath = path.join(DATA_DIR, `incrementais-${ano}-${mesAtualStr}.json`);
+      
+      fs.writeFileSync(incrementalPath, JSON.stringify(dados, null, 2));
 
       const sizeMB = (JSON.stringify(dados).length / 1024 / 1024).toFixed(2);
-      console.log(`   ✅ ${ano}_dados-completos.json (${sizeMB} MB - ${dados.length.toLocaleString('pt-BR')} registros)`);
+      console.log(`   ✅ incrementais-${ano}-${mesAtualStr}.json (${sizeMB} MB - ${dados.length.toLocaleString('pt-BR')} registros)`);
     }
-  } else {
-    console.log(`\n✅ Todos os anos já foram processados (dados imutáveis).\n`);
   }
 
   state.ultimaAtualizacao = agora.toISOString();
-  state.primeiraExecucao = false;
+  state.usandoLFS = true;
+  state.tipoAtualizacao = 'GitHub Actions (incrementais)';
   salvarEstado(state);
 
-  console.log(`✅ Atualização concluída!`);
-  console.log(`🕐 Última atualização: ${agora.toLocaleString('pt-BR')}`);
+  console.log(`\n✅ Atualização concluída!`);
+  console.log(`📊 Próximo passo: Regenerar estatísticas com dados incrementais + LFS históricos`);
 }
 
 main().catch(err => {
-  console.error('❌ ERRO:', err);
+  console.error('❌ ERRO FATAL:', err.message);
+  console.error(err.stack);
   process.exit(1);
 });

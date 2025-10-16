@@ -4,7 +4,7 @@ const fs = require('fs');
 const path = require('path');
 const Papa = require('papaparse');
 
-// Data atual (automático)
+// Data atual (automático - sempre pega os dados mais recentes)
 const ANO_ATUAL = new Date().getFullYear();
 const MES_ATUAL = new Date().getMonth() + 1;
 
@@ -116,7 +116,6 @@ function processarCSV(ano, mes) {
 
         if (anoMesData !== anoMesTarget) return;
 
-        // Cria registro limpo
         const registro = {
           RUBRICA: getColumnValue(row, 'RUBRICA'),
           NOME_MUNICIPIO: getColumnValue(row, 'NOME_MUNICIPIO'),
@@ -135,7 +134,6 @@ function processarCSV(ano, mes) {
 
         registros.push(registro);
 
-        // Agrega stats
         const rubrica = String(registro.RUBRICA || 'DESCONHECIDO').toUpperCase();
         stats.porRubrica[rubrica] = (stats.porRubrica[rubrica] || 0) + 1;
 
@@ -197,7 +195,7 @@ function processarCSV(ano, mes) {
 
 async function main() {
   console.log('🧪 Teste Local - Gerando JSONs Iniciais (TODOS OS MESES - DECRESCENTE)\n');
-  console.log(`📅 Processando até ${MES_ATUAL}/${ANO_ATUAL}...\n`);
+  console.log(`📅 Processando até ${String(MES_ATUAL).padStart(2, '0')}/${ANO_ATUAL}...\n`);
 
   if (!fs.existsSync(DATA_DIR)) {
     fs.mkdirSync(DATA_DIR, { recursive: true });
@@ -205,10 +203,11 @@ async function main() {
 
   const meses = gerarMesesDecrescentes();
   
-  // Agregadores globais
   const statsGlobal = {
     ultimaAtualizacao: new Date().toISOString(),
     totalRegistros: 0,
+    anoAtual: ANO_ATUAL,
+    mesAtual: MES_ATUAL,
     porRubrica: {}, porMunicipio: {}, porBairro: {}, porMesAno: {},
     porAno: {}, porMes: {}, porDiaSemana: {}, porHora: {},
     porTipoVeiculo: {}, porMarcaVeiculo: {}, porCorVeiculo: {},
@@ -220,20 +219,17 @@ async function main() {
   let mapaGlobal = [];
   let recentesGlobal = [];
   const topMarcas = {};
-  const state = { mesesProcessados: {}, ultimaAtualizacao: new Date().toISOString(), primeiraExecucao: false };
+  const state = { mesesProcessados: {}, ultimaAtualizacao: new Date().toISOString(), primeiraExecucao: false, anoAtual: ANO_ATUAL, mesAtual: MES_ATUAL };
 
-  // Armazena dados por ano
   let anoAtualProcesso = null;
   let dadosAnoAtual = [];
 
-  // Processa cada mês
   for (const { ano, mes } of meses) {
     const anoMesStr = `${ano}-${String(mes).padStart(2, '0')}`;
     console.log(`📂 ${anoMesStr}...`);
     
     const resultado = await processarCSV(ano, mes);
     
-    // Se mudou de ano, salva o anterior
     if (anoAtualProcesso !== null && anoAtualProcesso !== ano) {
       const filePath = path.join(DATA_DIR, `${anoAtualProcesso}_dados-completos.json`);
       fs.writeFileSync(filePath, JSON.stringify(dadosAnoAtual, null, 2));
@@ -249,10 +245,7 @@ async function main() {
     if (resultado.registros.length > 0) {
       console.log(`   ✅ ${resultado.registros.length} registros`);
       
-      // Acumula dados do ano
       dadosAnoAtual.push(...resultado.registros);
-
-      // Merge stats globais
       statsGlobal.totalRegistros += resultado.registros.length;
 
       Object.entries(resultado.stats).forEach(([key, value]) => {
@@ -267,7 +260,6 @@ async function main() {
         topMarcas[item.marca] = (topMarcas[item.marca] || 0) + item.count;
       });
 
-      // Mapa e recentes (só últimos)
       mapaGlobal = resultado.registros
         .filter(r => r.LATITUDE && r.LONGITUDE)
         .concat(mapaGlobal)
@@ -281,7 +273,6 @@ async function main() {
     }
   }
 
-  // Salva último ano
   if (anoAtualProcesso !== null && dadosAnoAtual.length > 0) {
     const filePath = path.join(DATA_DIR, `${anoAtualProcesso}_dados-completos.json`);
     fs.writeFileSync(filePath, JSON.stringify(dadosAnoAtual, null, 2));
@@ -289,25 +280,21 @@ async function main() {
     console.log(`   💾 Salvo ${anoAtualProcesso}_dados-completos.json (${sizeMB} MB - ${dadosAnoAtual.length.toLocaleString('pt-BR')} registros)`);
   }
 
-  // Top 10 marcas
   statsGlobal.top10MarcasMaisRoubadas = Object.entries(topMarcas)
     .sort((a, b) => b[1] - a[1])
     .slice(0, 10)
     .map(([marca, count]) => ({ marca, count }));
 
-  // Top bairros
   const topBairros = Object.entries(statsGlobal.porBairro)
     .sort((a, b) => b[1] - a[1])
     .slice(0, 100)
     .map(([bairro, count]) => ({ bairro, count }));
 
-  // Top municípios
   const topMunicipios = Object.entries(statsGlobal.porMunicipio)
     .sort((a, b) => b[1] - a[1])
     .slice(0, 50)
     .map(([municipio, count]) => ({ municipio, count }));
 
-  // Salva agregados
   console.log(`\n💾 Salvando arquivos agregados...`);
 
   fs.writeFileSync(path.join(DATA_DIR, 'estatisticas.json'), JSON.stringify(statsGlobal, null, 2));
@@ -326,17 +313,4 @@ async function main() {
   console.log(`   ✅ top-delegacias.json`);
 
   fs.writeFileSync(path.join(DATA_DIR, 'processing-state.json'), JSON.stringify(state, null, 2));
-  console.log(`   ✅ processing-state.json`);
-
-  console.log(`\n✅ CONCLUÍDO!`);
-  console.log(`\n📊 TOTAIS:`);
-  console.log(`   Registros processados: ${statsGlobal.totalRegistros.toLocaleString('pt-BR')}`);
-  console.log(`   Municípios: ${Object.keys(statsGlobal.porMunicipio).length}`);
-  console.log(`   Meses processados: ${Object.keys(state.mesesProcessados).length}`);
-  console.log(`   Pontos no mapa: ${mapaGlobal.length.toLocaleString('pt-BR')}`);
-}
-
-main().catch(err => {
-  console.error('❌ ERRO:', err);
-  process.exit(1);
-});
+  console.log(`   ✅
