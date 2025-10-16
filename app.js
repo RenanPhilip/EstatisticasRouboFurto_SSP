@@ -1,5 +1,4 @@
-// app.js - Dashboard Analytics Completo com validação
-
+// app.js - Dashboard Analytics Completo com validação (versão 2.0)
 let dadosEstatisticas = null;
 let dadosMapa = null;
 let mapInstance = null;
@@ -8,27 +7,34 @@ let charts = {};
 Chart.defaults.color = '#94a3b8';
 Chart.defaults.borderColor = '#334155';
 
+// 🔹 Variáveis automáticas de tempo
+const agora = new Date();
+const mesAtual = agora.getMonth() + 1;
+const anoAtual = agora.getFullYear();
+const mesAnterior = mesAtual === 1 ? 12 : mesAtual - 1;
+const anoMesAnterior = mesAtual === 1 ? anoAtual - 1 : anoAtual;
+
 async function carregarDados() {
   try {
     console.log('Carregando dados...');
-    
-    // Carrega estatísticas
+
+    // Carrega estatísticas iniciais (dados imutáveis)
     const respEstatisticas = await fetch('data/estatisticas.json');
     if (!respEstatisticas.ok) throw new Error('Estatísticas não encontrado');
-    
+
     const textoEst = await respEstatisticas.text();
-    
+
     // Valida se é JSON válido (não ponteiro LFS)
     if (textoEst.includes('git-lfs') || textoEst.includes('version https://git-lfs')) {
       throw new Error('Arquivo é ponteiro LFS (dados ainda sendo processados)');
     }
-    
+
     dadosEstatisticas = JSON.parse(textoEst);
-    
+
     if (!dadosEstatisticas || !dadosEstatisticas.totalRegistros) {
       throw new Error('Dados inválidos ou vazios');
     }
-    
+
     // Carrega mapa
     const respMapa = await fetch('data/mapa-ocorrencias.json');
     if (respMapa.ok) {
@@ -37,22 +43,26 @@ async function carregarDados() {
         dadosMapa = JSON.parse(textoMapa);
       }
     }
-    
+
     // Atualiza interface
     const dataAtualizacao = new Date(dadosEstatisticas.ultimaAtualizacao);
     document.getElementById('updateInfo').innerHTML = `
       <strong>Última atualização:</strong> ${dataAtualizacao.toLocaleDateString('pt-BR')} às ${dataAtualizacao.toLocaleTimeString('pt-BR')}
       <br><strong>Total de registros:</strong> ${dadosEstatisticas.totalRegistros.toLocaleString('pt-BR')}
     `;
-    
+
+    // Popula a interface imediatamente
     popularFiltros();
     atualizarCards();
     criarTodosGraficos();
-    
+
     if (dadosMapa && dadosMapa.length > 0) {
       inicializarMapa();
     }
-    
+
+    // 🔹 Atualiza dados do mês atual e anterior em background
+    atualizarMesesRecentes();
+
   } catch (error) {
     console.error('Erro ao carregar dados:', error);
     document.querySelector('.container').insertAdjacentHTML('afterbegin', `
@@ -64,6 +74,58 @@ async function carregarDados() {
   }
 }
 
+// 🔹 Atualização assíncrona dos meses recentes (não bloqueia o dashboard)
+async function atualizarMesesRecentes() {
+  try {
+    console.log(`🔄 Atualizando dados de ${mesAnterior}/${anoMesAnterior} e ${mesAtual}/${anoAtual}...`);
+
+    const urls = [
+      `data/${anoMesAnterior}-${String(mesAnterior).padStart(2, '0')}.json`,
+      `data/${anoAtual}-${String(mesAtual).padStart(2, '0')}.json`
+    ];
+
+    for (const url of urls) {
+      try {
+        const resp = await fetch(url);
+        if (!resp.ok) {
+          console.warn(`⚠️ Arquivo ${url} não encontrado`);
+          continue;
+        }
+
+        const texto = await resp.text();
+        if (texto.includes('git-lfs')) continue;
+
+        const novosDados = JSON.parse(texto);
+        if (novosDados && novosDados.totalRegistros) {
+          // 🔹 Mescla dados novos com os antigos
+          Object.keys(novosDados).forEach(chave => {
+            if (typeof novosDados[chave] === 'object') {
+              dadosEstatisticas[chave] = {
+                ...dadosEstatisticas[chave],
+                ...novosDados[chave]
+              };
+            } else {
+              dadosEstatisticas[chave] = novosDados[chave];
+            }
+          });
+          console.log(`✅ Dados de ${url} atualizados com sucesso.`);
+        }
+      } catch (e) {
+        console.warn(`Erro ao processar ${url}:`, e);
+      }
+    }
+
+    // Atualiza interface após atualização dos meses
+    atualizarCards();
+    criarTodosGraficos();
+    console.log('✅ Atualização concluída.');
+
+  } catch (error) {
+    console.error('Erro ao atualizar meses recentes:', error);
+  }
+}
+
+// 🔹 Funções originais mantidas
 function popularFiltros() {
   const anos = Object.keys(dadosEstatisticas.porAno).sort((a, b) => b - a);
   const yearFilter = document.getElementById('yearFilter');
@@ -73,7 +135,7 @@ function popularFiltros() {
     option.textContent = ano;
     yearFilter.appendChild(option);
   });
-  
+
   const municipios = Object.entries(dadosEstatisticas.porMunicipio)
     .sort((a, b) => b[1] - a[1])
     .slice(0, 20);
@@ -84,7 +146,7 @@ function popularFiltros() {
     option.textContent = municipio;
     municipioFilter.appendChild(option);
   });
-  
+
   const rubricas = Object.keys(dadosEstatisticas.porRubrica);
   const rubricaFilter = document.getElementById('rubricaFilter');
   rubricas.forEach(rubrica => {
@@ -93,7 +155,7 @@ function popularFiltros() {
     option.textContent = rubrica;
     rubricaFilter.appendChild(option);
   });
-  
+
   document.querySelectorAll('select').forEach(select => {
     select.addEventListener('change', aplicarFiltros);
   });
@@ -430,4 +492,10 @@ function criarGraficoMunicipios() {
     },
     options: {
       responsive: true,
-      plugins: { legend:
+      plugins: { legend: { position: 'right', labels: { color: '#94a3b8' } } },
+      scales: { r: { grid: { color: '#334155' } } }
+    }
+  });
+}
+
+document.addEventListener('DOMContentLoaded', carregarDados);
