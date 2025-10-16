@@ -18,9 +18,12 @@ jobs:
       - name: Clear npm cache
         run: npm cache clean --force
       - name: Install dependencies
-        run: npm install
+        run: |
+          npm install
+          npm list --depth=0  # Verifica dependências instaladas
       - name: Run data update script
         run: node scripts/update-data.js
+        working-directory: ./  # Garante que o script rode na raiz
       - name: Commit and push changes
         run: |
           git config --global user.name 'github-actions[bot]'
