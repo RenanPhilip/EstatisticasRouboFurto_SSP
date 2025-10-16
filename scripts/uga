@@ -1,0 +1,134 @@
+PS GitHub_Public\EstatisticasRouboFurto_SSP> # 1. Remova os arquivos do cache do git
+PS GitHub_Public\EstatisticasRouboFurto_SSP> git rm --cached data/*_dados-completos.json
+rm 'data/2020_dados-completos.json'
+rm 'data/2021_dados-completos.json'
+rm 'data/2022_dados-completos.json'
+rm 'data/2023_dados-completos.json'
+rm 'data/2024_dados-completos.json'
+rm 'data/2025_dados-completos.json'
+PS GitHub_Public\EstatisticasRouboFurto_SSP>
+PS GitHub_Public\EstatisticasRouboFurto_SSP> # 2. Verifique que os arquivos ainda existem localmente
+PS GitHub_Public\EstatisticasRouboFurto_SSP> dir data/*_dados-completos.json
+
+
+    Diretório: GitHub_Public\EstatisticasRouboFurto_SSP\data
+
+
+Mode                 LastWriteTime         Length Name
+----                 -------------         ------ ----
+-a----        16/10/2025     01:15       76775085 2020_dados-completos.json
+-a----        16/10/2025     01:15       81643207 2021_dados-completos.json
+-a----        16/10/2025     01:14      102091243 2022_dados-completos.json
+-a----        16/10/2025     01:13      141231124 2023_dados-completos.json
+-a----        16/10/2025     01:12      128314346 2024_dados-completos.json
+-a----        16/10/2025     01:11       74922866 2025_dados-completos.json
+
+
+PS GitHub_Public\EstatisticasRouboFurto_SSP>
+PS GitHub_Public\EstatisticasRouboFurto_SSP> # 3. Configure LFS para estes arquivos
+PS GitHub_Public\EstatisticasRouboFurto_SSP> git lfs track "data/*_dados-completos.json"
+"data/*_dados-completos.json" already supported
+PS GitHub_Public\EstatisticasRouboFurto_SSP>
+PS GitHub_Public\EstatisticasRouboFurto_SSP> # 4. Re-adicione ao git (agora como LFS)
+PS GitHub_Public\EstatisticasRouboFurto_SSP> git add data/.gitattributes
+fatal: pathspec 'data/.gitattributes' did not match any files
+PS GitHub_Public\EstatisticasRouboFurto_SSP> git add data/*_dados-completos.json
+PS GitHub_Public\EstatisticasRouboFurto_SSP>
+PS GitHub_Public\EstatisticasRouboFurto_SSP> # 5. Commit
+PS GitHub_Public\EstatisticasRouboFurto_SSP> git commit -m "Converter dados históricos para LFS"
+On branch main
+Your branch is up to date with 'origin/main'.
+
+Changes not staged for commit:
+  (use "git add <file>..." to update what will be committed)
+  (use "git restore <file>..." to discard changes in working directory)
+        modified:   data/processing-state.json
+        modified:   scripts/test-local.js
+        modified:   scripts/update-data.js
+
+Untracked files:
+  (use "git add <file>..." to include in what will be committed)
+        scripts/process-local.js
+
+no changes added to commit (use "git add" and/or "git commit -a")
+PS GitHub_Public\EstatisticasRouboFurto_SSP>
+PS GitHub_Public\EstatisticasRouboFurto_SSP> # 6. Push
+PS GitHub_Public\EstatisticasRouboFurto_SSP> git push
+Everything up-to-date
+PS GitHub_Public\EstatisticasRouboFurto_SSP>
+PS GitHub_Public\EstatisticasRouboFurto_SSP> # 7. Também adicione os scripts novos
+PS GitHub_Public\EstatisticasRouboFurto_SSP> git add scripts/process-local.js
+PS GitHub_Public\EstatisticasRouboFurto_SSP> git add scripts/test-local.js
+PS GitHub_Public\EstatisticasRouboFurto_SSP> git add scripts/update-data.js
+PS GitHub_Public\EstatisticasRouboFurto_SSP> git add data/processing-state.json
+PS GitHub_Public\EstatisticasRouboFurto_SSP> git commit -m "Atualizar scripts e estado"
+[main 04fcb48] Atualizar scripts e estado
+ 4 files changed, 314 insertions(+), 88 deletions(-)
+ create mode 100644 scripts/process-local.js
+PS GitHub_Public\EstatisticasRouboFurto_SSP> git push
+Uploading LFS objects: 100% (1/1), 295 B | 0 B/s, done.
+Enumerating objects: 14, done.
+Counting objects: 100% (14/14), done.
+Delta compression using up to 16 threads
+Compressing objects: 100% (8/8), done.
+Writing objects: 100% (8/8), 3.55 KiB | 1.78 MiB/s, done.
+Total 8 (delta 5), reused 0 (delta 0), pack-reused 0 (from 0)
+remote: Resolving deltas: 100% (5/5), completed with 4 local objects.
+To https://github.com/RenanPhilip/EstatisticasRouboFurto_SSP
+   37619f4..04fcb48  main -> main
+PS GitHub_Public\EstatisticasRouboFurto_SSP> ```
+`` : O termo '``' não é reconhecido como nome de cmdlet, função, arquivo de script ou programa operável. Verifique a grafia do nome ou, se um caminho
+tiver sido incluído, veja se o caminho está correto e tente novamente.
+No linha:1 caractere:1
++ ```
++ ~~~
+    + CategoryInfo          : ObjectNotFound: (``:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+
+PS GitHub_Public\EstatisticasRouboFurto_SSP>
+PS GitHub_Public\EstatisticasRouboFurto_SSP> Após isso, verifique no GitHub se os arquivos estão como LFS. Vá em `/data/` no repositório e clique em um `*_dados-completos.json` - deve mostrar:
+Após : O termo 'Após' não é reconhecido como nome de cmdlet, função, arquivo de script ou programa operável. Verifique a grafia do nome ou, se um caminho
+tiver sido incluído, veja se o caminho está correto e tente novamente.
+No linha:1 caractere:1
++ Após isso, verifique no GitHub se os arquivos estão como LFS. Vá em ` ...
++ ~~~~
+    + CategoryInfo          : ObjectNotFound: (Após:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+
+PS GitHub_Public\EstatisticasRouboFurto_SSP> ```
+`` : O termo '``' não é reconhecido como nome de cmdlet, função, arquivo de script ou programa operável. Verifique a grafia do nome ou, se um caminho
+tiver sido incluído, veja se o caminho está correto e tente novamente.
+No linha:1 caractere:1
++ ```
++ ~~~
+    + CategoryInfo          : ObjectNotFound: (``:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+
+PS GitHub_Public\EstatisticasRouboFurto_SSP> version https://git-lfs.github.com/spec/v1
+version : O termo 'version' não é reconhecido como nome de cmdlet, função, arquivo de script ou programa operável. Verifique a grafia do nome ou, se um
+caminho tiver sido incluído, veja se o caminho está correto e tente novamente.
+No linha:1 caractere:1
++ version https://git-lfs.github.com/spec/v1
++ ~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (version:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+
+PS GitHub_Public\EstatisticasRouboFurto_SSP> oid sha256:...
+oid : O termo 'oid' não é reconhecido como nome de cmdlet, função, arquivo de script ou programa operável. Verifique a grafia do nome ou, se um caminho
+tiver sido incluído, veja se o caminho está correto e tente novamente.
+No linha:1 caractere:1
++ oid sha256:...
++ ~~~
+    + CategoryInfo          : ObjectNotFound: (oid:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+
+PS GitHub_Public\EstatisticasRouboFurto_SSP> size ...
+size : O termo 'size' não é reconhecido como nome de cmdlet, função, arquivo de script ou programa operável. Verifique a grafia do nome ou, se um caminho
+tiver sido incluído, veja se o caminho está correto e tente novamente.
+No linha:1 caractere:1
++ size ...
++ ~~~~
+    + CategoryInfo          : ObjectNotFound: (size:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+
+PS C:\Users\rphil\Doc
