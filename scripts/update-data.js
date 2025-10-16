@@ -5,6 +5,10 @@ const fs = require('fs');
 const path = require('path');
 const Papa = require('papaparse');
 
+// Data atual (automático - sempre pega os dados mais recentes)
+const ANO_ATUAL = new Date().getFullYear();
+const MES_ATUAL = new Date().getMonth() + 1;
+
 const DATA_DIR = path.resolve(__dirname, '..', 'data');
 const CSV_DIR = path.join(__dirname, 'temp', 'csv');
 const BASE_URL = 'https://www.ssp.sp.gov.br/assets/estatistica/transparencia/baseDados/veiculosSub';
@@ -196,6 +200,7 @@ function processarCSV(ano, mes, csvPath) {
 
 async function main() {
   console.log('🔄 GITHUB ACTIONS - Atualizando dados SSP\n');
+  console.log(`📅 Data Atual: ${String(MES_ATUAL).padStart(2, '0')}/${ANO_ATUAL}\n`);
   console.log('ℹ️  Nota: Dados históricos em LFS não serão reatualizados\n');
 
   if (!fs.existsSync(DATA_DIR)) {
@@ -207,21 +212,19 @@ async function main() {
 
   const state = carregarEstado();
   const agora = new Date();
-  const anoAtual = agora.getFullYear();
-  const mesAtual = agora.getMonth() + 1;
-  const mesAnterior = mesAtual === 1 ? 12 : mesAtual - 1;
-  const anoAnterior = mesAnterior === 12 ? anoAtual - 1 : anoAtual;
+  const mesAnterior = mesAtual === 1 ? 12 : MES_ATUAL - 1;
+  const anoAnterior = mesAnterior === 12 ? ANO_ATUAL - 1 : ANO_ATUAL;
 
   // ⭐ APENAS últimos 2 meses (não toca nos dados históricos do LFS)
   const mesesParaProcessar = [
-    { ano: anoAtual, mes: mesAtual },
+    { ano: ANO_ATUAL, mes: MES_ATUAL },
     { ano: anoAnterior, mes: mesAnterior }
   ];
 
   // Incrementais apenas (não concatena com LFS)
   const dadosIncrementais = {};
 
-  console.log(`📅 Processando: ${anoAnterior}-${String(mesAnterior).padStart(2, '0')} até ${anoAtual}-${String(mesAtual).padStart(2, '0')}\n`);
+  console.log(`📅 Processando: ${anoAnterior}-${String(mesAnterior).padStart(2, '0')} até ${ANO_ATUAL}-${String(MES_ATUAL).padStart(2, '0')}\n`);
 
   for (const { ano, mes } of mesesParaProcessar) {
     const anoMesStr = `${ano}-${String(mes).padStart(2, '0')}`;
@@ -230,12 +233,30 @@ async function main() {
     const xlsxPath = path.join(__dirname, 'temp', fileName);
     const url = `${BASE_URL}/${fileName}`;
 
-    try {
-      console.log(`📂 ${anoMesStr}`);
-      console.log(`   📥 Baixando ${ano}...`);
-      const response = await axios.get(url, { responseType: 'arraybuffer', timeout: 180000 });
-      fs.writeFileSync(xlsxPath, response.data);
-      console.log(`   ✅ Download concluído (${(response.data.length / 1024 / 1024).toFixed(2)} MB)`);
+    console.log(`📂 ${anoMesStr}`);
+    console.log(`   📥 Baixando ${ano}...`);
+
+    // Retry automático (máx 3 tentativas)
+    let downloadSucesso = false;
+    let tentativa = 1;
+    const MAX_TENTATIVAS = 3;
+
+    while (tentativa <= MAX_TENTATIVAS && !downloadSucesso) {
+      try {
+        if (tentativa > 1) {
+          console.log(`   ↻ Tentativa ${tentativa}/${MAX_TENTATIVAS}...`);
+        }
+
+        const response = await axios.get(url, { 
+          responseType: 'arraybuffer', 
+          timeout: 180000,
+          maxContentLength: Infinity,
+          maxBodyLength: Infinity
+        });
+        
+        fs.writeFileSync(xlsxPath, response.data);
+        console.log(`   ✅ Download concluído (${(response.data.length / 1024 / 1024).toFixed(2)} MB)`);
+        downloadSucesso = true;
 
       const resultado = await processarXLSX(ano, mes, xlsxPath);
 
@@ -279,6 +300,8 @@ async function main() {
 
   state.ultimaAtualizacao = agora.toISOString();
   state.usandoLFS = true;
+  state.anoAtual = ANO_ATUAL;
+  state.mesAtual = MES_ATUAL;
   state.tipoAtualizacao = 'GitHub Actions (incrementais)';
   salvarEstado(state);
 
