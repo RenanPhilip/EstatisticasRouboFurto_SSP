@@ -1,4 +1,4 @@
-// update-data.js - PARA GITHUB ACTIONS (Não reatualiza dados completos do LFS)
+// update-data.js - VERSÃO CORRIGIDA COM MELHOR TRATAMENTO DE DOWNLOADS
 const axios = require('axios');
 const XLSX = require('xlsx');
 const fs = require('fs');
@@ -10,7 +10,10 @@ const ANO_ATUAL = new Date().getFullYear();
 const MES_ATUAL = new Date().getMonth() + 1;
 
 const DATA_DIR = path.resolve(__dirname, '..', 'data');
-const CSV_DIR = path.join(__dirname, 'temp', 'csv');
+const TEMP_DIR = path.join(__dirname, 'temp');
+const CSV_DIR = path.join(TEMP_DIR, 'csv');
+
+// URL CORRIGIDA
 const BASE_URL = 'https://www.ssp.sp.gov.br/assets/estatistica/transparencia/baseDados/veiculosSub';
 
 const COLUNAS_NECESSARIAS = [
@@ -26,6 +29,15 @@ const COLUNAS_ALTERNATIVAS = {
   'NOME_DELEGACIA': ['NOME_DELEGACIA_CIRC'],
   'DESC_COR_VEICULO': ['DESCR_COR_VEICULO']
 };
+
+// Criar diretórios se não existirem
+function ensureDirectories() {
+  [DATA_DIR, TEMP_DIR, CSV_DIR].forEach(dir => {
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+  });
+}
 
 function carregarEstado() {
   try {
@@ -43,7 +55,7 @@ function carregarEstado() {
     const conteudo = fs.readFileSync(statePath, 'utf8');
     
     if (conteudo.includes('git-lfs') || conteudo.includes('version https://git-lfs')) {
-      console.warn('⚠️  processing-state.json é ponteiro LFS, recriando...');
+      console.log('⚠️  processing-state.json é ponteiro LFS, recriando...');
       return { 
         mesesProcessados: {}, 
         ultimaAtualizacao: null,
@@ -107,29 +119,135 @@ function getColumnValue(row, col) {
   return null;
 }
 
+async function verificarArquivoExiste(url) {
+  try {
+    const response = await axios.head(url, { 
+      timeout: 30000,
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+      }
+    });
+    return response.status === 200;
+  } catch (error) {
+    return false;
+  }
+}
+
+async function baixarArquivo(ano) {
+  const fileName = `VeiculosSubtraidos_${ano}.xlsx`;
+  const url = `${BASE_URL}/${fileName}`;
+  const savePath = path.join(TEMP_DIR, fileName);
+
+  console.log(`   📥 Tentando baixar ${fileName}...`);
+
+  // Verificar se já existe localmente
+  if (fs.existsSync(savePath)) {
+    console.log(`   ✓ Arquivo já existe localmente`);
+    return savePath;
+  }
+
+  // Verificar se arquivo existe na URL
+  console.log(`   🔍 Verificando existência do arquivo...`);
+  const existe = await verificarArquivoExiste(url);
+  
+  if (!existe) {
+    console.log(`   ⚠️  Arquivo não encontrado na URL`);
+    return null;
+  }
+
+  let tentativa = 1;
+  const MAX_TENTATIVAS = 5;
+
+  while (tentativa <= MAX_TENTATIVAS) {
+    try {
+      console.log(`   📡 Download (tentativa ${tentativa}/${MAX_TENTATIVAS})...`);
+
+      const response = await axios.get(url, { 
+        responseType: 'arraybuffer', 
+        timeout: 300000, // 5 minutos
+        maxContentLength: 500 * 1024 * 1024, // 500MB
+        maxBodyLength: 500 * 1024 * 1024,
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+        }
+      });
+
+      // Validar que é um arquivo XLSX válido
+      if (response.data.length < 1000) {
+        throw new Error('Arquivo muito pequeno, pode ser erro HTML');
+      }
+
+      // Verificar magic number do XLSX (ZIP)
+      const header = response.data.slice(0, 4).toString('hex');
+      if (header !== '504b0304' && header !== '504b0506' && header !== '504b0708') {
+        console.log(`   ⚠️  Validação: header é ${header} (esperado 504b...)`);
+        // Continuar mesmo assim
+      }
+
+      // Salvar arquivo
+      fs.writeFileSync(savePath, response.data);
+      
+      const sizeMB = (response.data.length / 1024 / 1024).toFixed(2);
+      console.log(`   ✅ Download: ${sizeMB} MB`);
+      
+      return savePath;
+
+    } catch (error) {
+      tentativa++;
+      
+      const errorCode = error.code || error.message;
+      console.log(`   ❌ Erro (${errorCode})`);
+      
+      if (tentativa <= MAX_TENTATIVAS) {
+        const espera = Math.min(120, 10 * Math.pow(2, tentativa - 2));
+        console.log(`   ⏳ Aguardando ${espera}s antes de retry...`);
+        await new Promise(resolve => setTimeout(resolve, espera * 1000));
+      } else {
+        console.log(`   ❌ Falha após ${MAX_TENTATIVAS} tentativas`);
+        return null;
+      }
+    }
+  }
+
+  return null;
+}
+
 function processarXLSX(ano, mes, xlsxPath) {
   return new Promise((resolve) => {
     if (!fs.existsSync(xlsxPath)) {
+      console.log(`   ❌ Arquivo não encontrado: ${xlsxPath}`);
       resolve({ ano, mes, registros: [] });
       return;
     }
 
     try {
-      console.log(`   📄 Convertendo para CSV...`);
-      const workbook = XLSX.readFile(xlsxPath);
+      console.log(`   📄 Lendo XLSX...`);
+      
+      const workbook = XLSX.readFile(xlsxPath, {
+        cellDates: true,
+        cellNF: false,
+        cellText: false,
+        sheetStubs: false
+      });
+      
       const sheetName = workbook.SheetNames[0];
+      if (!sheetName) {
+        console.log(`   ❌ Nenhuma aba encontrada`);
+        resolve({ ano, mes, registros: [] });
+        return;
+      }
+
       const worksheet = workbook.Sheets[sheetName];
       const csvData = XLSX.utils.sheet_to_csv(worksheet, { FS: ';' });
 
       const csvPath = path.join(CSV_DIR, `VeiculosSubtraidos_${ano}.csv`);
-      if (!fs.existsSync(CSV_DIR)) {
-        fs.mkdirSync(CSV_DIR, { recursive: true });
-      }
-      fs.writeFileSync(csvPath, csvData);
+      fs.writeFileSync(csvPath, csvData, 'utf8');
+
+      console.log(`   ✓ Convertido para CSV`);
 
       processarCSV(ano, mes, csvPath).then(resolve);
     } catch (error) {
-      console.error(`   ❌ Erro: ${error.message}`);
+      console.error(`   ❌ Erro ao processar XLSX: ${error.message}`);
       resolve({ ano, mes, registros: [] });
     }
   });
@@ -143,6 +261,8 @@ function processarCSV(ano, mes, csvPath) {
     try {
       const conteudo = fs.readFileSync(csvPath, 'utf8');
       const limpo = limparConteudo(conteudo);
+
+      let processados = 0;
 
       Papa.parse(limpo, {
         header: true,
@@ -181,92 +301,75 @@ function processarCSV(ano, mes, csvPath) {
           };
 
           registros.push(registro);
+          processados++;
         },
         complete: () => {
+          console.log(`   ✓ ${processados} registros processados, ${registros.length} válidos`);
           resolve({ ano, mes, registros });
         },
         error: (err) => {
           console.error(`   ❌ Erro CSV: ${err.message}`);
-          resolve({ ano, mes, registros: [] });
+          resolve({ ano, mes, registros });
         }
       });
     } catch (error) {
-      console.error(`   ❌ Erro leitura: ${error.message}`);
+      console.error(`   ❌ Erro leitura CSV: ${error.message}`);
       resolve({ ano, mes, registros: [] });
     }
   });
 }
 
 async function main() {
-  console.log('🔄 GITHUB ACTIONS - Atualizando dados SSP\n');
-  console.log(`📅 Data: ${String(MES_ATUAL).padStart(2, '0')}/${ANO_ATUAL}\n`);
+  console.log('\n🔄 GITHUB ACTIONS - Atualizando dados SSP\n');
+  console.log(`📅 Data Atual: ${String(MES_ATUAL).padStart(2, '0')}/${ANO_ATUAL}\n`);
 
-  if (!fs.existsSync(DATA_DIR)) {
-    fs.mkdirSync(DATA_DIR, { recursive: true });
-  }
-  if (!fs.existsSync(CSV_DIR)) {
-    fs.mkdirSync(CSV_DIR, { recursive: true });
-  }
+  ensureDirectories();
 
   const state = carregarEstado();
   const agora = new Date();
+
+  // Definir meses para processar (atual e anterior)
   const mesAnterior = MES_ATUAL === 1 ? 12 : MES_ATUAL - 1;
   const anoAnterior = mesAnterior === 12 ? ANO_ATUAL - 1 : ANO_ATUAL;
 
   const mesesParaProcessar = [
-    { ano: ANO_ATUAL, mes: MES_ATUAL },
-    { ano: anoAnterior, mes: mesAnterior }
+    { ano: ANO_ATUAL, mes: MES_ATUAL, tipo: 'ATUAL' },
+    { ano: anoAnterior, mes: mesAnterior, tipo: 'ANTERIOR' }
   ];
 
+  console.log(`📋 Processando:\n`);
+  mesesParaProcessar.forEach(m => {
+    console.log(`   • ${String(m.mes).padStart(2, '0')}/${m.ano} (mês ${m.tipo})`);
+  });
+  console.log();
+
   const dadosIncrementais = {};
+  const arquivosProcessados = new Set();
 
-  console.log(`📅 Processando: ${anoAnterior}-${String(mesAnterior).padStart(2, '0')} até ${ANO_ATUAL}-${String(MES_ATUAL).padStart(2, '0')}\n`);
+  // Baixar arquivos por ano
+  const anosUnicos = [...new Set(mesesParaProcessar.map(m => m.ano))];
+  const arquivosXLSX = {};
 
-  for (const { ano, mes } of mesesParaProcessar) {
-    const anoMesStr = `${ano}-${String(mes).padStart(2, '0')}`;
-    const fileName = `VeiculosSubtraidos_${ano}.xlsx`;
-    const xlsxPath = path.join(__dirname, 'temp', fileName);
-    const url = `${BASE_URL}/${fileName}`;
+  for (const ano of anosUnicos) {
+    const xlsxPath = await baixarArquivo(ano);
+    arquivosXLSX[ano] = xlsxPath;
 
-    console.log(`📂 ${anoMesStr}`);
-    console.log(`   📥 Baixando...`);
-
-    let downloadSucesso = false;
-    let tentativa = 1;
-    const MAX_TENTATIVAS = 3;
-
-    while (tentativa <= MAX_TENTATIVAS && !downloadSucesso) {
-      try {
-        if (tentativa > 1) {
-          console.log(`   ↻ Tentativa ${tentativa}/${MAX_TENTATIVAS}...`);
-        }
-
-        const response = await axios.get(url, { 
-          responseType: 'arraybuffer', 
-          timeout: 180000,
-          maxContentLength: Infinity,
-          maxBodyLength: Infinity
-        });
-        
-        fs.writeFileSync(xlsxPath, response.data);
-        console.log(`   ✅ Download: ${(response.data.length / 1024 / 1024).toFixed(2)} MB`);
-        downloadSucesso = true;
-
-      } catch (error) {
-        tentativa++;
-        
-        if (tentativa <= MAX_TENTATIVAS) {
-          const espera = Math.pow(2, tentativa - 1) * 5;
-          console.log(`   ⏳ Aguardando ${espera}s...`);
-          await new Promise(resolve => setTimeout(resolve, espera * 1000));
-        } else {
-          console.error(`   ❌ Falha após ${MAX_TENTATIVAS} tentativas`);
-        }
-      }
+    if (xlsxPath) {
+      console.log();
+    } else {
+      console.log(`   ⚠️  Pulando ano ${ano} (arquivo não disponível)\n`);
     }
+  }
 
-    if (!downloadSucesso) {
-      console.log(`   Pulando ${anoMesStr}`);
+  // Processar meses
+  for (const { ano, mes, tipo } of mesesParaProcessar) {
+    const anoMesStr = `${ano}-${String(mes).padStart(2, '0')}`;
+    const xlsxPath = arquivosXLSX[ano];
+
+    console.log(`📂 ${anoMesStr} (${tipo})`);
+
+    if (!xlsxPath) {
+      console.log(`   ⚠️  Arquivo não disponível para este mês\n`);
       continue;
     }
 
@@ -274,7 +377,7 @@ async function main() {
       const resultado = await processarXLSX(ano, mes, xlsxPath);
 
       if (resultado.registros.length > 0) {
-        console.log(`   ✅ ${resultado.registros.length} registros`);
+        console.log(`   ✅ ${resultado.registros.length} registros\n`);
 
         if (!dadosIncrementais[ano]) {
           dadosIncrementais[ano] = [];
@@ -286,13 +389,14 @@ async function main() {
           registros: resultado.registros.length
         };
       } else {
-        console.log(`   ⚠️ Nenhum dado`);
+        console.log(`   ⚠️  Nenhum dado para este mês\n`);
       }
     } catch (error) {
-      console.error(`   ❌ Erro: ${error.message}`);
+      console.error(`   ❌ Erro: ${error.message}\n`);
     }
   }
 
+  // Salvar incrementais se houver dados
   if (Object.keys(dadosIncrementais).length > 0) {
     console.log(`\n💾 Salvando incrementais...\n`);
     
@@ -303,20 +407,29 @@ async function main() {
       fs.writeFileSync(incrementalPath, JSON.stringify(dados, null, 2));
 
       const sizeMB = (JSON.stringify(dados).length / 1024 / 1024).toFixed(2);
-      console.log(`   ✅ incrementais-${ano}-${mesStr}.json (${sizeMB} MB - ${dados.length} registros)`);
+      console.log(`   ✓ incrementais-${ano}-${mesStr}.json`);
+      console.log(`     └─ ${sizeMB} MB | ${dados.length.toLocaleString('pt-BR')} registros\n`);
     }
+  } else {
+    console.log(`\n⚠️  Nenhum dado foi processado\n`);
   }
 
+  // Atualizar estado
   state.ultimaAtualizacao = agora.toISOString();
   state.usandoLFS = true;
   state.anoAtual = ANO_ATUAL;
   state.mesAtual = MES_ATUAL;
   salvarEstado(state);
 
-  console.log(`\n✅ Atualização concluída!`);
+  console.log(`✅ Atualização concluída!\n`);
+  console.log(`📊 Resumo:`);
+  console.log(`   • Meses processados: ${Object.keys(state.mesesProcessados).length}`);
+  console.log(`   • Arquivos baixados: ${Object.values(arquivosXLSX).filter(Boolean).length}/${anosUnicos.length}`);
+  console.log(`   • Última atualização: ${new Date(state.ultimaAtualizacao).toLocaleString('pt-BR')}\n`);
 }
 
 main().catch(err => {
-  console.error('❌ ERRO:', err.message);
+  console.error('\n❌ ERRO FATAL:', err.message);
+  console.error(err.stack);
   process.exit(1);
 });
