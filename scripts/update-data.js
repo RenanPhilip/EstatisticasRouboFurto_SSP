@@ -23,12 +23,18 @@ const COLUNAS_ALTERNATIVAS = {
   'DESC_COR_VEICULO': ['DESCR_COR_VEICULO']
 };
 
+const fs = require('fs');
+
 function carregarEstado() {
-  const statePath = path.join(DATA_DIR, 'processing-state.json');
-  if (fs.existsSync(statePath)) {
-    return JSON.parse(fs.readFileSync(statePath, 'utf8'));
+  try {
+    const data = fs.readFileSync('data/processing-state.json', 'utf8');
+    console.log('Conteúdo bruto de processing-state.json:', data);
+    return JSON.parse(data);
+  } catch (error) {
+    console.error('Erro ao carregar estado:', error.message);
+    console.log('Conteúdo bruto ou erro:', data || 'Arquivo vazio ou inacessível');
+    return { mesesProcessados: {}, ultimaAtualizacao: null, primeiraExecucao: true };
   }
-  return { mesesProcessados: {}, ultimaAtualizacao: null, primeiraExecucao: true };
 }
 
 function salvarEstado(state) {
