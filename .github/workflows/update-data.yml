@@ -2,7 +2,7 @@ name: Update Data
 
 on:
   schedule:
-    - cron: '0 0 * * *' # Diariamente à meia-noite UTC
+    - cron: '0 0 * * *'
   workflow_dispatch:
 
 jobs:
@@ -16,6 +16,10 @@ jobs:
         with:
           node-version: '18'
           cache: 'npm'
+      - name: Debug directory structure
+        run: |
+          pwd
+          ls -la
       - name: Clean npm cache
         run: npm cache clean --force
       - name: Verify package.json
@@ -25,7 +29,7 @@ jobs:
           npm ci
           npm list --depth=0
       - name: Run data update script
-        run: npm run update  # Usa o script "update" do package.json
+        run: npm run update
         working-directory: .
       - name: Commit and push changes
         run: |
