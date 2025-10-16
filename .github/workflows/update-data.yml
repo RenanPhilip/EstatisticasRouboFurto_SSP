@@ -15,15 +15,18 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '18'
-      - name: Clear npm cache
+          cache: 'npm'
+      - name: Clean npm cache
         run: npm cache clean --force
+      - name: Verify package.json
+        run: cat package.json
       - name: Install dependencies
         run: |
-          npm install
-          npm list --depth=0  # Verifica dependências instaladas
+          npm ci
+          npm list --depth=0
       - name: Run data update script
-        run: node scripts/update-data.js
-        working-directory: ./  # Garante que o script rode na raiz
+        run: npm run update  # Usa o script "update" do package.json
+        working-directory: .
       - name: Commit and push changes
         run: |
           git config --global user.name 'github-actions[bot]'
