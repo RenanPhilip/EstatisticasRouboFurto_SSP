@@ -23,8 +23,6 @@ const COLUNAS_ALTERNATIVAS = {
   'DESC_COR_VEICULO': ['DESCR_COR_VEICULO']
 };
 
-const fs = require('fs');
-
 function carregarEstado() {
   try {
     const data = fs.readFileSync('data/processing-state.json', 'utf8');
