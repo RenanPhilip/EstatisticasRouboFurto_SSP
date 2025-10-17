@@ -1,0 +1,65 @@
+{
+  "ultimaAtualizacao": "2025-10-17T02:10:53.292Z",
+  "totalRegistros": 0,
+  "anoAtual": 2025,
+  "mesAtual": 10,
+  "porRubrica": {},
+  "porMunicipio": {},
+  "porBairro": {},
+  "porMesAno": {},
+  "porAno": {},
+  "porMes": {},
+  "porDiaSemana": {
+    "domingo": 0,
+    "segunda-feira": 0,
+    "terça-feira": 0,
+    "quarta-feira": 0,
+    "quinta-feira": 0,
+    "sexta-feira": 0,
+    "sábado": 0
+  },
+  "porHora": {
+    "10": 0,
+    "11": 0,
+    "12": 0,
+    "13": 0,
+    "14": 0,
+    "15": 0,
+    "16": 0,
+    "17": 0,
+    "18": 0,
+    "19": 0,
+    "20": 0,
+    "21": 0,
+    "22": 0,
+    "23": 0,
+    "00": 0,
+    "01": 0,
+    "02": 0,
+    "03": 0,
+    "04": 0,
+    "05": 0,
+    "06": 0,
+    "07": 0,
+    "08": 0,
+    "09": 0
+  },
+  "porTipoVeiculo": {},
+  "porMarcaVeiculo": {},
+  "porCorVeiculo": {},
+  "porPeriodo": {
+    "Madrugada": 0,
+    "Manhã": 0,
+    "Tarde": 0,
+    "Noite": 0
+  },
+  "porAutoria": {
+    "conhecida": 0,
+    "desconhecida": 0
+  },
+  "porFlagrante": {
+    "sim": 0,
+    "nao": 0
+  },
+  "top10MarcasMaisRoubadas": []
+}
