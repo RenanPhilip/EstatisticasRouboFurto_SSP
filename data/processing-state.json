@@ -1,3 +1,8 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:3a8f4f275433fecf67ebab7f76fad38f03499d0808113cc4b0fcef0c16a2d19e
-size 147
+{
+  "mesesProcessados": {},
+  "ultimaAtualizacao": "2025-10-17T03:13:56.329Z",
+  "usandoLFS": true,
+  "anoAtual": 2025,
+  "mesAtual": 10,
+  "totalRegistros": 1272606
+}

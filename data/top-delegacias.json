@@ -1,1 +1,202 @@
-[]
+[
+  {
+    "municipio": "S.PAULO",
+    "count": 596682
+  },
+  {
+    "municipio": "GUARULHOS",
+    "count": 40094
+  },
+  {
+    "municipio": "CAMPINAS",
+    "count": 38624
+  },
+  {
+    "municipio": "S.ANDRE",
+    "count": 35949
+  },
+  {
+    "municipio": "OSASCO",
+    "count": 31178
+  },
+  {
+    "municipio": "S.BERNARDO DO CAMPO",
+    "count": 30854
+  },
+  {
+    "municipio": "DIADEMA",
+    "count": 16990
+  },
+  {
+    "municipio": "ITAQUAQUECETUBA",
+    "count": 16195
+  },
+  {
+    "municipio": "SOROCABA",
+    "count": 15981
+  },
+  {
+    "municipio": "MAUA",
+    "count": 15478
+  },
+  {
+    "municipio": "RIBEIRAO PRETO",
+    "count": 13046
+  },
+  {
+    "municipio": "CARAPICUIBA",
+    "count": 12990
+  },
+  {
+    "municipio": "SUZANO",
+    "count": 11281
+  },
+  {
+    "municipio": "S.JOSE DO RIO PRETO",
+    "count": 10214
+  },
+  {
+    "municipio": "PRAIA GRANDE",
+    "count": 10043
+  },
+  {
+    "municipio": "JUNDIAI",
+    "count": 10018
+  },
+  {
+    "municipio": "S.JOSE DOS CAMPOS",
+    "count": 9957
+  },
+  {
+    "municipio": "LIMEIRA",
+    "count": 9529
+  },
+  {
+    "municipio": "TABOAO DA SERRA",
+    "count": 9387
+  },
+  {
+    "municipio": "SANTOS",
+    "count": 8918
+  },
+  {
+    "municipio": "MOGI DAS CRUZES",
+    "count": 8819
+  },
+  {
+    "municipio": "COTIA",
+    "count": 8765
+  },
+  {
+    "municipio": "SUMARE",
+    "count": 8411
+  },
+  {
+    "municipio": "ITAPECERICA DA SERRA",
+    "count": 8356
+  },
+  {
+    "municipio": "S.VICENTE",
+    "count": 7895
+  },
+  {
+    "municipio": "HORTOLANDIA",
+    "count": 7671
+  },
+  {
+    "municipio": "FERRAZ DE VASCONCELOS",
+    "count": 6654
+  },
+  {
+    "municipio": "AMERICANA",
+    "count": 6633
+  },
+  {
+    "municipio": "BARUERI",
+    "count": 6504
+  },
+  {
+    "municipio": "RIO CLARO",
+    "count": 5737
+  },
+  {
+    "municipio": "FRANCA",
+    "count": 5576
+  },
+  {
+    "municipio": "PIRACICABA",
+    "count": 5569
+  },
+  {
+    "municipio": "CUBATAO",
+    "count": 5495
+  },
+  {
+    "municipio": "S.CARLOS",
+    "count": 5490
+  },
+  {
+    "municipio": "BAURU",
+    "count": 4759
+  },
+  {
+    "municipio": "ITAPEVI",
+    "count": 4707
+  },
+  {
+    "municipio": "EMBU DAS ARTES",
+    "count": 4704
+  },
+  {
+    "municipio": "JACAREI",
+    "count": 4512
+  },
+  {
+    "municipio": "TAUBATE",
+    "count": 4470
+  },
+  {
+    "municipio": "ITANHAEM",
+    "count": 4116
+  },
+  {
+    "municipio": "S.CAETANO DO SUL",
+    "count": 4028
+  },
+  {
+    "municipio": "POA",
+    "count": 3910
+  },
+  {
+    "municipio": "S.BARBARA D OESTE",
+    "count": 3892
+  },
+  {
+    "municipio": "ARARAS",
+    "count": 3651
+  },
+  {
+    "municipio": "ARUJA",
+    "count": 3355
+  },
+  {
+    "municipio": "GUARUJA",
+    "count": 3149
+  },
+  {
+    "municipio": "PAULINIA",
+    "count": 2988
+  },
+  {
+    "municipio": "FRANCISCO MORATO",
+    "count": 2905
+  },
+  {
+    "municipio": "ARARAQUARA",
+    "count": 2839
+  },
+  {
+    "municipio": "RIBEIRAO PIRES",
+    "count": 2732
+  }
+]
