@@ -73,6 +73,30 @@ function getColumnValue(row, col) {
   return null;
 }
 
+
+function salvarDadosTrimestrais(ano, dados) {
+  const dadosTrimestrais = { 1: [], 2: [], 3: [], 4: [] };
+  
+  dados.forEach(registro => {
+    const data = parseDate(registro.DATA_OCORRENCIA_BO);
+    if (data && data.getFullYear() === ano) {
+      const mes = data.getMonth() + 1;
+      const trimestre = Math.ceil(mes / 3);
+      dadosTrimestrais[trimestre].push(registro);
+    }
+  });
+
+  for (const trimestre in dadosTrimestrais) {
+    const dadosTrimestre = dadosTrimestrais[trimestre];
+    if (dadosTrimestre.length > 0) {
+      const filePath = path.join(DATA_DIR, `${ano}_T${trimestre}.json`);
+      fs.writeFileSync(filePath, JSON.stringify(dadosTrimestre, null, 2));
+      const sizeMB = (JSON.stringify(dadosTrimestre).length / 1024 / 1024).toFixed(2);
+      console.log(`  Salvo: ${path.basename(filePath)} (${sizeMB} MB - ${dadosTrimestre.length.toLocaleString('pt-BR')} registros)`);
+    }
+  }
+}
+
 function processarCSV(ano, mes) {
   return new Promise((resolve) => {
     const filePath = path.join(CSV_DIR, `VeiculosSubtraidos_${ano}.csv`);
@@ -234,11 +258,8 @@ async function main() {
     const resultado = await processarCSV(ano, mes);
     
     if (anoAtualProcesso !== null && anoAtualProcesso !== ano) {
-      const filePath = path.join(DATA_DIR, `${anoAtualProcesso}_dados-completos.json`);
-      fs.writeFileSync(filePath, JSON.stringify(dadosAnoAtual, null, 2));
-      const sizeMB = (JSON.stringify(dadosAnoAtual).length / 1024 / 1024).toFixed(2);
-      console.log(`  Salvo: ${anoAtualProcesso}_dados-completos.json (${sizeMB} MB - ${dadosAnoAtual.length.toLocaleString('pt-BR')} registros)\n`);
-      
+      // Salva o último ano processado antes de mudar
+      salvarDadosTrimestrais(anoAtualProcesso, dadosAnoAtual);
       dadosAnoAtual = [];
       if (global.gc) global.gc();
     }
@@ -277,10 +298,8 @@ async function main() {
   }
 
   if (anoAtualProcesso !== null && dadosAnoAtual.length > 0) {
-    const filePath = path.join(DATA_DIR, `${anoAtualProcesso}_dados-completos.json`);
-    fs.writeFileSync(filePath, JSON.stringify(dadosAnoAtual, null, 2));
-    const sizeMB = (JSON.stringify(dadosAnoAtual).length / 1024 / 1024).toFixed(2);
-    console.log(`  Salvo: ${anoAtualProcesso}_dados-completos.json (${sizeMB} MB - ${dadosAnoAtual.length.toLocaleString('pt-BR')} registros)\n`);
+    // Salva o último ano processado
+    salvarDadosTrimestrais(anoAtualProcesso, dadosAnoAtual);
   }
 
   statsGlobal.top10MarcasMaisRoubadas = Object.entries(topMarcas)

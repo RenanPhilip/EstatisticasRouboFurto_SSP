@@ -142,37 +142,52 @@ async function main() {
     console.log(`\n2025 → 2020 | ANO ${ano}:`);
     console.log('─'.repeat(40));
     
-    let dadosAno = [];
+    const dadosTrimestrais = {
+      1: [], // T1: Jan, Fev, Mar
+      2: [], // T2: Abr, Mai, Jun
+      3: [], // T3: Jul, Ago, Set
+      4: []  // T4: Out, Nov, Dez
+    };
     let totalRegistros = 0;
 
     // Processa cada mês de forma DECRESCENTE (12 até 1)
     for (let mes = 12; mes >= 1; mes--) {
+      const trimestre = Math.ceil(mes / 3);
       const anoMesStr = `${ano}-${String(mes).padStart(2, '0')}`;
       const csvPath = path.join(CSV_DIR, `VeiculosSubtraidos_${ano}.csv`);
       
-      process.stdout.write(`   ${anoMesStr}: `);
+      process.stdout.write(`   ${anoMesStr} (T${trimestre}): `);
       
       const resultado = await processarCSV(ano, mes, csvPath);
       
       if (resultado.registros.length > 0) {
         console.log(`${resultado.registros.length} registros`);
-        dadosAno.push(...resultado.registros);
+        dadosTrimestrais[trimestre].push(...resultado.registros);
         totalRegistros += resultado.registros.length;
       } else {
         console.log('vazio');
       }
     }
 
-    // Salva arquivo completo do ano
-    if (dadosAno.length > 0) {
-      const filePath = path.join(DATA_DIR, `${ano}_dados-completos.json`);
-      fs.writeFileSync(filePath, JSON.stringify(dadosAno, null, 2));
-      
-      const sizeBytes = JSON.stringify(dadosAno).length;
-      const sizeMB = (sizeBytes / 1024 / 1024).toFixed(2);
-      
-      console.log(`\n   Salvo: ${ano}_dados-completos.json`);
-      console.log(`   Tamanho: ${sizeMB} MB | Registros: ${totalRegistros.toLocaleString('pt-BR')}\n`);
+    // Salva arquivos trimestrais
+    for (const trimestre in dadosTrimestrais) {
+      const dados = dadosTrimestrais[trimestre];
+      if (dados.length > 0) {
+        const filePath = path.join(DATA_DIR, `${ano}_T${trimestre}.json`);
+        fs.writeFileSync(filePath, JSON.stringify(dados, null, 2));
+        
+        const sizeBytes = JSON.stringify(dados).length;
+        const sizeMB = (sizeBytes / 1024 / 1024).toFixed(2);
+        
+        console.log(`\n   Salvo: ${path.basename(filePath)}`);
+        console.log(`   Tamanho: ${sizeMB} MB | Registros: ${dados.length.toLocaleString('pt-BR')}`);
+      }
+    }
+    
+    if (totalRegistros > 0) {
+      console.log(`\n   Total do ano ${ano}: ${totalRegistros.toLocaleString('pt-BR')} registros\n`);
+    } else {
+      console.log(`\n   Nenhum registro encontrado para o ano ${ano}.\n`);
     }
   }
 
@@ -182,7 +197,7 @@ async function main() {
     datasProcessadas: '2020 a 2025 (ordem decrescente)',
     dataProcessamento: new Date().toISOString(),
     usandoLFS: true,
-    proximoPasso: 'git add data/*_dados-completos.json && git commit -m "Dados históricos LFS" && git push'
+    proximoPasso: 'git add data/*_T*.json && git commit -m "Dados históricos trimestrais" && git push'
   };
 
   fs.writeFileSync(path.join(DATA_DIR, 'processing-state.json'), JSON.stringify(state, null, 2));
@@ -190,19 +205,16 @@ async function main() {
   console.log('\n==========================================');
   console.log('           PRÓXIMOS PASSOS');
   console.log('==========================================\n');
-  console.log('1. Instalar Git LFS (primeira vez):');
-  console.log('   git lfs install\n');
+  console.log('1. Fazer commit dos novos arquivos trimestrais:');
+  console.log('   git add data/*_T*.json\n');
   
-  console.log('2. Configurar tracking:');
-  console.log('   git add data/*_dados-completos.json\n');
+  console.log('2. Fazer commit:');
+  console.log('   git commit -m "Dados históricos SSP (2020-2025) por trimestre"\n');
   
-  console.log('3. Fazer commit:');
-  console.log('   git commit -m "Dados históricos SSP (2020-2025) via LFS"\n');
-  
-  console.log('4. Fazer push:');
+  console.log('3. Fazer push:');
   console.log('   git push\n');
   
-  console.log('GitHub Actions fará o resto automaticamente!\n');
+  console.log('4. Execute o aggregate-stats.js para gerar as estatísticas iniciais.\n');
 }
 
 main().catch(err => {

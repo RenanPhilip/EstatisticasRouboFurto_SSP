@@ -160,23 +160,26 @@ function processarRegistro(registro) {
   // Para recentes (últimos registros)
   recentesGlobal.push(registro);
 }
-
+F
 function main() {
   console.log('📂 Procurando arquivos de dados completos...\n');
 
-  // Encontrar todos os arquivos *_dados-completos.json
+  // Encontrar todos os arquivos *_T[1-4].json
   const arquivos = fs.readdirSync(DATA_DIR)
-    .filter(f => f.endsWith('_dados-completos.json'))
+    .filter(f => f.match(/\d{4}_T[1-4]\.json$/))
     .sort((a, b) => {
-      const anoA = parseInt(a.split('_')[0]);
-      const anoB = parseInt(b.split('_')[0]);
-      return anoA - anoB; // Ordem crescente (de 2020 para 2025)
+      // Ordena por ano (crescente) e depois por trimestre (crescente)
+      const [anoA, trimestreA] = a.match(/(\d{4})_T(\d)\.json$/).slice(1);
+      const [anoB, trimestreB] = b.match(/(\d{4})_T(\d)\.json$/).slice(1);
+      
+      if (anoA !== anoB) return parseInt(anoA) - parseInt(anoB);
+      return parseInt(trimestreA) - parseInt(trimestreB);
     });
 
   console.log(`🔍 Encontrados ${arquivos.length} arquivos:\n`);
 
   if (arquivos.length === 0) {
-    console.error('❌ Nenhum arquivo *_dados-completos.json encontrado!');
+    console.error('❌ Nenhum arquivo *_T[1-4].json encontrado!');
     console.error('   Execute process-local.js primeiro\n');
     process.exit(1);
   }
