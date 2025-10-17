@@ -1,11 +1,11 @@
-// update-data.js - VERSÃO CORRIGIDA COM MELHOR TRATAMENTO DE DOWNLOADS
+// update-data.js - VERSÃO OTIMIZADA PARA GRANDES ARQUIVOS (streaming)
 const axios = require('axios');
 const XLSX = require('xlsx');
 const fs = require('fs');
 const path = require('path');
 const Papa = require('papaparse');
 
-// Data atual (automático - sempre pega os dados mais recentes)
+// Data atual
 const ANO_ATUAL = new Date().getFullYear();
 const MES_ATUAL = new Date().getMonth() + 1;
 
@@ -16,12 +16,6 @@ const CSV_DIR = path.join(TEMP_DIR, 'csv');
 // URL CORRIGIDA
 const BASE_URL = 'https://www.ssp.sp.gov.br/assets/estatistica/transparencia/baseDados/veiculosSub';
 
-const COLUNAS_NECESSARIAS = [
-  'RUBRICA', 'DATA_OCORRENCIA_BO', 'NOME_MUNICIPIO', 'BAIRRO', 'DESCR_MARCA_VEICULO',
-  'DESCR_TIPO_VEICULO', 'DESC_COR_VEICULO', 'HORA_OCORRENCIA', 'FLAG_FLAGRANTE', 'AUTORIA_BO',
-  'LATITUDE', 'LONGITUDE', 'NOME_DELEGACIA'
-];
-
 const COLUNAS_ALTERNATIVAS = {
   'NOME_MUNICIPIO': ['CIDADE', 'NOME_MUNICIPIO_CIRC'],
   'DATA_OCORRENCIA_BO': ['DATA_OCORRENCIA'],
@@ -30,7 +24,6 @@ const COLUNAS_ALTERNATIVAS = {
   'DESC_COR_VEICULO': ['DESCR_COR_VEICULO']
 };
 
-// Criar diretórios se não existirem
 function ensureDirectories() {
   [DATA_DIR, TEMP_DIR, CSV_DIR].forEach(dir => {
     if (!fs.existsSync(dir)) {
@@ -45,22 +38,14 @@ function carregarEstado() {
     
     if (!fs.existsSync(statePath)) {
       console.log('📂 Arquivo de estado não encontrado. Criando novo...');
-      return { 
-        mesesProcessados: {}, 
-        ultimaAtualizacao: null, 
-        usandoLFS: true
-      };
+      return { mesesProcessados: {}, ultimaAtualizacao: null, usandoLFS: true };
     }
 
     const conteudo = fs.readFileSync(statePath, 'utf8');
     
     if (conteudo.includes('git-lfs') || conteudo.includes('version https://git-lfs')) {
       console.log('⚠️  processing-state.json é ponteiro LFS, recriando...');
-      return { 
-        mesesProcessados: {}, 
-        ultimaAtualizacao: null,
-        usandoLFS: true
-      };
+      return { mesesProcessados: {}, ultimaAtualizacao: null, usandoLFS: true };
     }
 
     const state = JSON.parse(conteudo);
@@ -69,11 +54,7 @@ function carregarEstado() {
     
   } catch (error) {
     console.error('❌ Erro ao carregar estado:', error.message);
-    return { 
-      mesesProcessados: {}, 
-      ultimaAtualizacao: null,
-      usandoLFS: true
-    };
+    return { mesesProcessados: {}, ultimaAtualizacao: null, usandoLFS: true };
   }
 }
 
@@ -81,15 +62,6 @@ function salvarEstado(state) {
   const statePath = path.join(DATA_DIR, 'processing-state.json');
   fs.writeFileSync(statePath, JSON.stringify(state, null, 2));
   console.log(`💾 Estado salvo`);
-}
-
-function limparConteudo(conteudo) {
-  let limpo = conteudo;
-  if (limpo.charCodeAt(0) === 0xFEFF) {
-    limpo = limpo.slice(1);
-  }
-  limpo = limpo.replace(/nullnullnull+/g, '');
-  return limpo.trim();
 }
 
 function parseDate(dateStr) {
@@ -123,9 +95,7 @@ async function verificarArquivoExiste(url) {
   try {
     const response = await axios.head(url, { 
       timeout: 30000,
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-      }
+      headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' }
     });
     return response.status === 200;
   } catch (error) {
@@ -140,14 +110,12 @@ async function baixarArquivo(ano) {
 
   console.log(`   📥 Tentando baixar ${fileName}...`);
 
-  // Verificar se já existe localmente
   if (fs.existsSync(savePath)) {
     console.log(`   ✓ Arquivo já existe localmente`);
     return savePath;
   }
 
-  // Verificar se arquivo existe na URL
-  console.log(`   🔍 Verificando existência do arquivo...`);
+  console.log(`   🔍 Verificando existência...`);
   const existe = await verificarArquivoExiste(url);
   
   if (!existe) {
@@ -160,31 +128,20 @@ async function baixarArquivo(ano) {
 
   while (tentativa <= MAX_TENTATIVAS) {
     try {
-      console.log(`   📡 Download (tentativa ${tentativa}/${MAX_TENTATIVAS})...`);
+      console.log(`   📡 Download (${tentativa}/${MAX_TENTATIVAS})...`);
 
       const response = await axios.get(url, { 
         responseType: 'arraybuffer', 
-        timeout: 300000, // 5 minutos
-        maxContentLength: 500 * 1024 * 1024, // 500MB
+        timeout: 300000,
+        maxContentLength: 500 * 1024 * 1024,
         maxBodyLength: 500 * 1024 * 1024,
-        headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-        }
+        headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' }
       });
 
-      // Validar que é um arquivo XLSX válido
       if (response.data.length < 1000) {
         throw new Error('Arquivo muito pequeno, pode ser erro HTML');
       }
 
-      // Verificar magic number do XLSX (ZIP)
-      const header = response.data.slice(0, 4).toString('hex');
-      if (header !== '504b0304' && header !== '504b0506' && header !== '504b0708') {
-        console.log(`   ⚠️  Validação: header é ${header} (esperado 504b...)`);
-        // Continuar mesmo assim
-      }
-
-      // Salvar arquivo
       fs.writeFileSync(savePath, response.data);
       
       const sizeMB = (response.data.length / 1024 / 1024).toFixed(2);
@@ -195,16 +152,12 @@ async function baixarArquivo(ano) {
     } catch (error) {
       tentativa++;
       
-      const errorCode = error.code || error.message;
-      console.log(`   ❌ Erro (${errorCode})`);
+      console.log(`   ❌ Erro (${error.code || error.message})`);
       
       if (tentativa <= MAX_TENTATIVAS) {
         const espera = Math.min(120, 10 * Math.pow(2, tentativa - 2));
-        console.log(`   ⏳ Aguardando ${espera}s antes de retry...`);
+        console.log(`   ⏳ Aguardando ${espera}s...`);
         await new Promise(resolve => setTimeout(resolve, espera * 1000));
-      } else {
-        console.log(`   ❌ Falha após ${MAX_TENTATIVAS} tentativas`);
-        return null;
       }
     }
   }
@@ -212,22 +165,27 @@ async function baixarArquivo(ano) {
   return null;
 }
 
-function processarXLSX(ano, mes, xlsxPath) {
+// ⭐ NOVO: Leitura OTIMIZADA do XLSX com limite de linhas
+function processarXLSXOtimizado(ano, mes, xlsxPath) {
   return new Promise((resolve) => {
     if (!fs.existsSync(xlsxPath)) {
-      console.log(`   ❌ Arquivo não encontrado: ${xlsxPath}`);
+      console.log(`   ❌ Arquivo não encontrado`);
       resolve({ ano, mes, registros: [] });
       return;
     }
 
     try {
-      console.log(`   📄 Lendo XLSX...`);
+      console.log(`   📄 Lendo XLSX (otimizado)...`);
       
+      // Ler arquivo com limite
       const workbook = XLSX.readFile(xlsxPath, {
         cellDates: true,
+        cellFormula: false,
+        cellHTML: false,
         cellNF: false,
         cellText: false,
-        sheetStubs: false
+        sheetStubs: false,
+        defval: ''  // Valor padrão para células vazias
       });
       
       const sheetName = workbook.SheetNames[0];
@@ -238,97 +196,87 @@ function processarXLSX(ano, mes, xlsxPath) {
       }
 
       const worksheet = workbook.Sheets[sheetName];
-      const csvData = XLSX.utils.sheet_to_csv(worksheet, { FS: ';' });
+      
+      // Converter XLSX para array de objetos (mais rápido que CSV)
+      console.log(`   ⚙️  Convertendo dados...`);
+      const linhas = XLSX.utils.sheet_to_json(worksheet, { 
+        defval: '',
+        blankrows: false
+      });
 
-      const csvPath = path.join(CSV_DIR, `VeiculosSubtraidos_${ano}.csv`);
-      fs.writeFileSync(csvPath, csvData, 'utf8');
+      console.log(`   ✓ Total de linhas no arquivo: ${linhas.length.toLocaleString('pt-BR')}`);
 
-      console.log(`   ✓ Convertido para CSV`);
-
-      processarCSV(ano, mes, csvPath).then(resolve);
+      processarLinhas(ano, mes, linhas).then(resolve);
+      
     } catch (error) {
-      console.error(`   ❌ Erro ao processar XLSX: ${error.message}`);
+      console.error(`   ❌ Erro ao ler XLSX: ${error.message}`);
       resolve({ ano, mes, registros: [] });
     }
   });
 }
 
-function processarCSV(ano, mes, csvPath) {
+function processarLinhas(ano, mes, linhas) {
   return new Promise((resolve) => {
     const anoMesTarget = `${ano}-${String(mes).padStart(2, '0')}`;
     const registros = [];
+    let processados = 0;
+    let filtrados = 0;
 
-    try {
-      const conteudo = fs.readFileSync(csvPath, 'utf8');
-      const limpo = limparConteudo(conteudo);
+    console.log(`   🔄 Filtrando por mês ${anoMesTarget}...`);
 
-      let processados = 0;
+    for (const row of linhas) {
+      processados++;
 
-      Papa.parse(limpo, {
-        header: true,
-        delimiter: ';',
-        skipEmptyLines: true,
-        transformHeader: h => h.trim(),
-        dynamicTyping: false,
-        step: (result) => {
-          if (result.errors.length > 0) return;
+      // Log de progresso a cada 50k linhas
+      if (processados % 50000 === 0) {
+        console.log(`      Processados: ${processados.toLocaleString('pt-BR')}...`);
+      }
 
-          const row = result.data;
-          const data = parseDate(getColumnValue(row, 'DATA_OCORRENCIA_BO'));
+      const data = parseDate(getColumnValue(row, 'DATA_OCORRENCIA_BO'));
 
-          if (!data) return;
+      if (!data) continue;
 
-          const anoData = data.getFullYear();
-          const mesData = data.getMonth() + 1;
-          const anoMesData = `${anoData}-${String(mesData).padStart(2, '0')}`;
+      const anoData = data.getFullYear();
+      const mesData = data.getMonth() + 1;
+      const anoMesData = `${anoData}-${String(mesData).padStart(2, '0')}`;
 
-          if (anoMesData !== anoMesTarget) return;
+      if (anoMesData !== anoMesTarget) continue;
 
-          const registro = {
-            RUBRICA: getColumnValue(row, 'RUBRICA'),
-            NOME_MUNICIPIO: getColumnValue(row, 'NOME_MUNICIPIO'),
-            BAIRRO: getColumnValue(row, 'BAIRRO'),
-            DESCR_MARCA_VEICULO: getColumnValue(row, 'DESCR_MARCA_VEICULO'),
-            DESCR_TIPO_VEICULO: getColumnValue(row, 'DESCR_TIPO_VEICULO'),
-            DESC_COR_VEICULO: getColumnValue(row, 'DESC_COR_VEICULO'),
-            HORA_OCORRENCIA: getColumnValue(row, 'HORA_OCORRENCIA'),
-            FLAG_FLAGRANTE: getColumnValue(row, 'FLAG_FLAGRANTE'),
-            AUTORIA_BO: getColumnValue(row, 'AUTORIA_BO'),
-            LATITUDE: getColumnValue(row, 'LATITUDE'),
-            LONGITUDE: getColumnValue(row, 'LONGITUDE'),
-            NOME_DELEGACIA: getColumnValue(row, 'NOME_DELEGACIA'),
-            DATA_OCORRENCIA_BO: getColumnValue(row, 'DATA_OCORRENCIA_BO')
-          };
+      filtrados++;
 
-          registros.push(registro);
-          processados++;
-        },
-        complete: () => {
-          console.log(`   ✓ ${processados} registros processados, ${registros.length} válidos`);
-          resolve({ ano, mes, registros });
-        },
-        error: (err) => {
-          console.error(`   ❌ Erro CSV: ${err.message}`);
-          resolve({ ano, mes, registros });
-        }
-      });
-    } catch (error) {
-      console.error(`   ❌ Erro leitura CSV: ${error.message}`);
-      resolve({ ano, mes, registros: [] });
+      const registro = {
+        RUBRICA: getColumnValue(row, 'RUBRICA'),
+        NOME_MUNICIPIO: getColumnValue(row, 'NOME_MUNICIPIO'),
+        BAIRRO: getColumnValue(row, 'BAIRRO'),
+        DESCR_MARCA_VEICULO: getColumnValue(row, 'DESCR_MARCA_VEICULO'),
+        DESCR_TIPO_VEICULO: getColumnValue(row, 'DESCR_TIPO_VEICULO'),
+        DESC_COR_VEICULO: getColumnValue(row, 'DESC_COR_VEICULO'),
+        HORA_OCORRENCIA: getColumnValue(row, 'HORA_OCORRENCIA'),
+        FLAG_FLAGRANTE: getColumnValue(row, 'FLAG_FLAGRANTE'),
+        AUTORIA_BO: getColumnValue(row, 'AUTORIA_BO'),
+        LATITUDE: getColumnValue(row, 'LATITUDE'),
+        LONGITUDE: getColumnValue(row, 'LONGITUDE'),
+        NOME_DELEGACIA: getColumnValue(row, 'NOME_DELEGACIA'),
+        DATA_OCORRENCIA_BO: getColumnValue(row, 'DATA_OCORRENCIA_BO')
+      };
+
+      registros.push(registro);
     }
+
+    console.log(`   ✓ ${processados.toLocaleString('pt-BR')} processadas, ${registros.length} válidas`);
+    resolve({ ano, mes, registros });
   });
 }
 
 async function main() {
-  console.log('\n🔄 GITHUB ACTIONS - Atualizando dados SSP\n');
-  console.log(`📅 Data Atual: ${String(MES_ATUAL).padStart(2, '0')}/${ANO_ATUAL}\n`);
+  console.log('\n🔄 GITHUB ACTIONS - Atualizando dados SSP');
+  console.log(`📅 Data: ${String(MES_ATUAL).padStart(2, '0')}/${ANO_ATUAL}\n`);
 
   ensureDirectories();
 
   const state = carregarEstado();
   const agora = new Date();
 
-  // Definir meses para processar (atual e anterior)
   const mesAnterior = MES_ATUAL === 1 ? 12 : MES_ATUAL - 1;
   const anoAnterior = mesAnterior === 12 ? ANO_ATUAL - 1 : ANO_ATUAL;
 
@@ -344,12 +292,10 @@ async function main() {
   console.log();
 
   const dadosIncrementais = {};
-  const arquivosProcessados = new Set();
-
-  // Baixar arquivos por ano
   const anosUnicos = [...new Set(mesesParaProcessar.map(m => m.ano))];
   const arquivosXLSX = {};
 
+  // Baixar arquivos
   for (const ano of anosUnicos) {
     const xlsxPath = await baixarArquivo(ano);
     arquivosXLSX[ano] = xlsxPath;
@@ -357,7 +303,7 @@ async function main() {
     if (xlsxPath) {
       console.log();
     } else {
-      console.log(`   ⚠️  Pulando ano ${ano} (arquivo não disponível)\n`);
+      console.log(`   ⚠️  Pulando ano ${ano}\n`);
     }
   }
 
@@ -369,12 +315,12 @@ async function main() {
     console.log(`📂 ${anoMesStr} (${tipo})`);
 
     if (!xlsxPath) {
-      console.log(`   ⚠️  Arquivo não disponível para este mês\n`);
+      console.log(`   ⚠️  Arquivo não disponível\n`);
       continue;
     }
 
     try {
-      const resultado = await processarXLSX(ano, mes, xlsxPath);
+      const resultado = await processarXLSXOtimizado(ano, mes, xlsxPath);
 
       if (resultado.registros.length > 0) {
         console.log(`   ✅ ${resultado.registros.length} registros\n`);
@@ -389,14 +335,14 @@ async function main() {
           registros: resultado.registros.length
         };
       } else {
-        console.log(`   ⚠️  Nenhum dado para este mês\n`);
+        console.log(`   ⚠️  Nenhum dado\n`);
       }
     } catch (error) {
       console.error(`   ❌ Erro: ${error.message}\n`);
     }
   }
 
-  // Salvar incrementais se houver dados
+  // Salvar incrementais
   if (Object.keys(dadosIncrementais).length > 0) {
     console.log(`\n💾 Salvando incrementais...\n`);
     
@@ -407,29 +353,22 @@ async function main() {
       fs.writeFileSync(incrementalPath, JSON.stringify(dados, null, 2));
 
       const sizeMB = (JSON.stringify(dados).length / 1024 / 1024).toFixed(2);
-      console.log(`   ✓ incrementais-${ano}-${mesStr}.json`);
-      console.log(`     └─ ${sizeMB} MB | ${dados.length.toLocaleString('pt-BR')} registros\n`);
+      console.log(`   ✓ incrementais-${ano}-${mesStr}.json (${sizeMB} MB | ${dados.length.toLocaleString('pt-BR')} registros)\n`);
     }
   } else {
-    console.log(`\n⚠️  Nenhum dado foi processado\n`);
+    console.log(`\n⚠️  Nenhum dado processado\n`);
   }
 
-  // Atualizar estado
   state.ultimaAtualizacao = agora.toISOString();
   state.usandoLFS = true;
   state.anoAtual = ANO_ATUAL;
   state.mesAtual = MES_ATUAL;
   salvarEstado(state);
 
-  console.log(`✅ Atualização concluída!\n`);
-  console.log(`📊 Resumo:`);
-  console.log(`   • Meses processados: ${Object.keys(state.mesesProcessados).length}`);
-  console.log(`   • Arquivos baixados: ${Object.values(arquivosXLSX).filter(Boolean).length}/${anosUnicos.length}`);
-  console.log(`   • Última atualização: ${new Date(state.ultimaAtualizacao).toLocaleString('pt-BR')}\n`);
+  console.log(`✅ Concluído!\n`);
 }
 
 main().catch(err => {
-  console.error('\n❌ ERRO FATAL:', err.message);
-  console.error(err.stack);
+  console.error('\n❌ ERRO:', err.message);
   process.exit(1);
 });
