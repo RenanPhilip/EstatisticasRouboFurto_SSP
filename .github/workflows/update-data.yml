@@ -28,6 +28,8 @@ jobs:
         run: |
           npm ci
           npm list --depth=0
+      - name: Install Puppeteer dependencies
+        run: sudo apt-get update && sudo apt-get install -y libnss3 libfontconfig
       - name: Run data update script
         run: npm run update
         working-directory: .

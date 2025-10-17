@@ -4,6 +4,9 @@ const XLSX = require('xlsx');
 const fs = require('fs');
 const path = require('path');
 const Papa = require('papaparse');
+const puppeteer = require('puppeteer');
+
+
 
 // Data atual
 const ANO_ATUAL = new Date().getFullYear();
@@ -14,7 +17,8 @@ const TEMP_DIR = path.join(__dirname, 'temp');
 const CSV_DIR = path.join(TEMP_DIR, 'csv');
 
 // URL CORRIGIDA
-const BASE_URL = 'https://www.ssp.sp.gov.br/assets/estatistica/transparencia/baseDados/veiculosSub';
+const BASE_URL_DOWNLOAD = 'https://www.ssp.sp.gov.br/assets/estatistica/transparencia/baseDados/veiculosSub';
+const BASE_URL_PAGINA = 'https://www.ssp.sp.gov.br/estatistica/consultas';
 
 const COLUNAS_ALTERNATIVAS = {
   'NOME_MUNICIPIO': ['CIDADE', 'NOME_MUNICIPIO_CIRC'],
@@ -91,46 +95,27 @@ function getColumnValue(row, col) {
   return null;
 }
 
-async function verificarArquivoExiste(url) {
-  try {
-    const response = await axios.head(url, { 
-      timeout: 30000,
-      headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' }
-    });
-    return response.status === 200;
-  } catch (error) {
-    return false;
-  }
-}
-
 async function baixarArquivo(ano) {
   const fileName = `VeiculosSubtraidos_${ano}.xlsx`;
-  const url = `${BASE_URL}/${fileName}`;
   const savePath = path.join(TEMP_DIR, fileName);
 
-  console.log(`   📥 Tentando baixar ${fileName}...`);
+  console.log(`   📥 Tentando baixar ${fileName} (Ano ${ano})...`);
 
   if (fs.existsSync(savePath)) {
     console.log(`   ✓ Arquivo já existe localmente`);
     return savePath;
   }
 
-  console.log(`   🔍 Verificando existência...`);
-  const existe = await verificarArquivoExiste(url);
-  
-  if (!existe) {
-    console.log(`   ⚠️  Arquivo não encontrado na URL`);
-    return null;
-  }
-
+  // Tentar baixar pela URL direta primeiro (mais rápido)
+  const urlDireta = `${BASE_URL_DOWNLOAD}/${fileName}`;
   let tentativa = 1;
-  const MAX_TENTATIVAS = 5;
+  const MAX_TENTATIVAS = 3;
 
   while (tentativa <= MAX_TENTATIVAS) {
     try {
-      console.log(`   📡 Download (${tentativa}/${MAX_TENTATIVAS})...`);
+      console.log(`   📡 Tentativa ${tentativa} de download direto...`);
 
-      const response = await axios.get(url, { 
+      const response = await axios.get(urlDireta, { 
         responseType: 'arraybuffer', 
         timeout: 300000,
         maxContentLength: 500 * 1024 * 1024,
@@ -145,20 +130,89 @@ async function baixarArquivo(ano) {
       fs.writeFileSync(savePath, response.data);
       
       const sizeMB = (response.data.length / 1024 / 1024).toFixed(2);
-      console.log(`   ✅ Download: ${sizeMB} MB`);
+      console.log(`   ✅ Download Direto: ${sizeMB} MB`);
       
       return savePath;
 
     } catch (error) {
+      console.log(`   ❌ Erro no download direto (${error.code || error.message})`);
       tentativa++;
-      
-      console.log(`   ❌ Erro (${error.code || error.message})`);
-      
       if (tentativa <= MAX_TENTATIVAS) {
-        const espera = Math.min(120, 10 * Math.pow(2, tentativa - 2));
+        const espera = 5;
         console.log(`   ⏳ Aguardando ${espera}s...`);
         await new Promise(resolve => setTimeout(resolve, espera * 1000));
       }
+    }
+  }
+
+  // Se falhar, tentar baixar via Puppeteer (simulando acesso à página)
+  console.log(`   🌐 Tentando baixar via Puppeteer (página ${BASE_URL_PAGINA})...`);
+  let browser;
+  try {
+    browser = await puppeteer.launch({ 
+      headless: true,
+      args: ['--no-sandbox', '--disable-setuid-sandbox']
+    });
+    const page = await browser.newPage();
+    
+    // Configurar o diretório de download
+    await page._client().send('Page.setDownloadBehavior', {
+      behavior: 'allow',
+      downloadPath: TEMP_DIR,
+    });
+
+    await page.goto(BASE_URL_PAGINA, { waitUntil: 'networkidle2', timeout: 60000 });
+
+    // Tentar encontrar o link de download (exemplo)
+    // Isso é um chute, o ideal seria inspecionar a página.
+    // Como o usuário deu a URL direta, vamos tentar encontrar o link correto.
+    const selector = `a[href*="/VeiculosSubtraidos_${ano}.xlsx"]`;
+    console.log(`   🔍 Buscando link com seletor: ${selector}`);
+    
+    const link = await page.waitForSelector(selector, { timeout: 10000 }).catch(() => null);
+
+    if (link) {
+      console.log(`   🔗 Link encontrado. Clicando...`);
+      // Observar o download
+      const downloadPromise = new Promise((resolve, reject) => {
+        page.on('downloadprogress', (item) => {
+          console.log(`      Download: ${item.url} - ${item.state}`);
+        });
+        page.on('downloadfinished', (item) => {
+          console.log(`      Download concluído: ${item.url}`);
+          resolve(item.path);
+        });
+        page.on('downloadfailed', (item) => {
+          reject(new Error(`Download falhou: ${item.url}`));
+        });
+      });
+      
+      await link.click();
+      
+      // Esperar o download terminar
+      const downloadedPath = await downloadPromise;
+
+      if (downloadedPath && fs.existsSync(downloadedPath)) {
+        // O arquivo é baixado com o nome original.
+        // O Puppeteer pode salvar com um nome temporário ou o nome final.
+        // Vamos renomear para garantir o padrão.
+        if (downloadedPath !== savePath) {
+             fs.renameSync(downloadedPath, savePath);
+        }
+        console.log(`   ✅ Download via Puppeteer: ${savePath}`);
+        return savePath;
+      } else {
+        throw new Error('Download via Puppeteer falhou ou arquivo não encontrado.');
+      }
+    } else {
+      console.log(`   ⚠️  Link não encontrado na página.`);
+    }
+
+  } catch (error) {
+    console.error(`   ❌ Erro no Puppeteer: ${error.message}`);
+  } finally {
+    if (browser) {
+      await browser.close();
     }
   }
 

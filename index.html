@@ -11,7 +11,7 @@
 </head>
 
 <body>
-    <div class="container">
+    <div class="container modern-layout">
         <header>
             <h1>📊 Estatísticas de Segurança - SP</h1>
             <p class="subtitle">Roubos e Furtos de Veículos no Estado de São Paulo</p>
@@ -20,31 +20,46 @@
             </div>
         </header>
 
-        <div class="filters">
-            <label>
-                Ano:
-                <select id="yearFilter">
-                    <option value="">Todos</option>
-                </select>
-            </label>
-            <label>
-                Município:
-                <select id="municipioFilter">
-                    <option value="">Todos</option>
-                </select>
-            </label>
-            <label>
-                Rubrica:
-                <select id="rubricaFilter">
-                    <option value="">Todas</option>
-                </select>
-            </label>
-            <label>
-                Período:
-                <select id="periodoFilter">
-                    <option value="">Todos</option>
-                </select>
-            </label>
+        <div class="filters-container">
+            <h2>Filtros</h2>
+            <div class="filters-grid">
+                <label class="filter-item">
+                    <span>Ano:</span>
+                    <select id="yearFilter">
+                        <option value="">Todos</option>
+                    </select>
+                </label>
+                <label class="filter-item">
+                    <span>Município:</span>
+                    <select id="municipioFilter">
+                        <option value="">Todos</option>
+                    </select>
+                </label>
+                <label class="filter-item">
+                    <span>Rubrica:</span>
+                    <select id="rubricaFilter">
+                        <option value="">Todas</option>
+                    </select>
+                </label>
+                <label class="filter-item">
+                    <span>Período:</span>
+                    <select id="periodoFilter">
+                        <option value="">Todos</option>
+                    </select>
+                </label>
+                <label class="filter-item">
+                    <span>Tipo de Veículo:</span>
+                    <select id="tipoVeiculoFilter">
+                        <option value="">Todos</option>
+                    </select>
+                </label>
+                <label class="filter-item">
+                    <span>Cor do Veículo:</span>
+                    <select id="corVeiculoFilter">
+                        <option value="">Todas</option>
+                    </select>
+                </label>
+            </div>
         </div>
 
         <div class="stats-grid">
@@ -114,8 +129,19 @@
             <canvas id="periodoChart"></canvas>
         </div>
 
-        <div class="chart-container">
+        <div class="chart-container map-container">
             <h2 class="chart-title">Mapa de Ocorrências Recentes</h2>
+            <div class="map-controls">
+                <label>
+                    <input type="checkbox" id="mapRoubo" checked> Roubo
+                </label>
+                <label>
+                    <input type="checkbox" id="mapFurto" checked> Furto
+                </label>
+                <label>
+                    <input type="checkbox" id="mapEncontrado" checked> Encontrado (Recuperação)
+                </label>
+            </div>
             <div id="map"></div>
         </div>
     </div>

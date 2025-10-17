@@ -6,43 +6,76 @@
 
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: #e2e8f0; /* Fundo cinza suave */
     min-height: 100vh;
     padding: 20px;
 }
 
-.container {
-    max-width: 1400px;
+.container.modern-layout {
+    max-width: 1600px;
     margin: 0 auto;
+    background: #f8fafc; /* Fundo mais claro */
+    box-shadow: 0 0 50px rgba(0, 0, 0, 0.1);
+    border-radius: 15px;
+    padding: 30px;
 }
 
 header {
-    background: white;
+    background: #1e293b; /* Fundo escuro para o cabeçalho */
     padding: 30px;
-    border-radius: 15px;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    border-radius: 12px;
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
     margin-bottom: 30px;
     text-align: center;
 }
 
 h1 {
-    color: #333;
-    font-size: 2.5em;
-    margin-bottom: 10px;
+    color: #f8fafc; /* Texto claro */
+    font-size: 2.8em;
+    margin-bottom: 5px;
 }
 
 .subtitle {
-    color: #666;
-    font-size: 1.1em;
+    color: #94a3b8; /* Texto cinza claro */
+    font-size: 1.2em;
 }
 
 .update-info {
     margin-top: 15px;
     padding: 10px;
-    background: #f0f0f0;
+    background: #334155; /* Fundo escuro */
     border-radius: 8px;
     font-size: 0.9em;
-    color: #555;
+    color: #cbd5e1; /* Texto claro */
+}
+
+.filters-container {
+    background: white;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    margin-bottom: 30px;
+}
+
+.filters-container h2 {
+    font-size: 1.2em;
+    color: #1e293b;
+    margin-bottom: 15px;
+    border-bottom: 1px solid #e2e8f0;
+    padding-bottom: 10px;
+}
+
+.filters-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+}
+
+.filter-item span {
+    display: block;
+    font-size: 0.9em;
+    color: #64748b;
+    margin-bottom: 5px;
 }
 
 .stats-grid {
@@ -66,7 +99,7 @@ h1 {
 
 .stat-label {
     font-size: 0.9em;
-    color: #666;
+    color: #64748b;
     text-transform: uppercase;
     letter-spacing: 1px;
     margin-bottom: 10px;
@@ -75,7 +108,7 @@ h1 {
 .stat-value {
     font-size: 2.5em;
     font-weight: bold;
-    color: #667eea;
+    color: #0f766e; /* Cor Teal moderna */
 }
 
 .chart-container {
@@ -88,21 +121,10 @@ h1 {
 
 .chart-title {
     font-size: 1.5em;
-    color: #333;
+    color: #1e293b;
     margin-bottom: 20px;
     padding-bottom: 10px;
-    border-bottom: 2px solid #667eea;
-}
-
-.filters {
-    background: white;
-    padding: 20px;
-    border-radius: 12px;
-    margin-bottom: 30px;
-    display: flex;
-    gap: 15px;
-    flex-wrap: wrap;
-    align-items: center;
+    border-bottom: 2px solid #0f766e; /* Cor Teal moderna */
 }
 
 select,
@@ -112,18 +134,19 @@ input {
     border-radius: 8px;
     font-size: 1em;
     transition: border-color 0.3s;
+    width: 100%; /* Ocupa todo o espaço do item do grid */
 }
 
 select:focus,
 input:focus {
     outline: none;
-    border-color: #667eea;
+    border-color: #0f766e;
 }
 
 .loading {
     text-align: center;
     padding: 50px;
-    color: white;
+    color: #1e293b;
     font-size: 1.5em;
 }
 
@@ -135,17 +158,55 @@ input:focus {
     margin: 20px 0;
 }
 
+.map-container {
+    position: relative;
+}
+
+.map-controls {
+    position: absolute;
+    top: 80px; /* Ajuste para não sobrepor o título */
+    right: 20px;
+    z-index: 1000;
+    background: rgba(255, 255, 255, 0.9);
+    padding: 10px;
+    border-radius: 8px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+.map-controls label {
+    display: block;
+    margin-bottom: 5px;
+    font-size: 0.9em;
+    color: #1e293b;
+}
+
 #map {
     height: 500px;
     border-radius: 12px;
 }
 
+@media (max-width: 1024px) {
+    .filters-grid {
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    }
+}
+
 @media (max-width: 768px) {
+    .container.modern-layout {
+        padding: 15px;
+    }
+
     h1 {
-        font-size: 1.8em;
+        font-size: 2em;
     }
 
     .stats-grid {
         grid-template-columns: 1fr;
+    }
+    
+    .map-controls {
+        position: static;
+        margin-bottom: 15px;
+        width: 100%;
     }
 }

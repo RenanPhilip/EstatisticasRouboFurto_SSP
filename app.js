@@ -52,6 +52,14 @@ async function carregarDados() {
     if (dadosMapa && dadosMapa.length > 0) {
       inicializarMapa();
     }
+
+    document.querySelectorAll('select').forEach(select => {
+      select.addEventListener('change', aplicarFiltros);
+    });
+    
+    document.querySelectorAll('.map-controls input[type="checkbox"]').forEach(checkbox => {
+      checkbox.addEventListener('change', atualizarMapa);
+    });
     
   } catch (error) {
     console.error('Erro ao carregar dados:', error);
@@ -93,9 +101,24 @@ function popularFiltros() {
     option.textContent = rubrica;
     rubricaFilter.appendChild(option);
   });
-  
-  document.querySelectorAll('select').forEach(select => {
-    select.addEventListener('change', aplicarFiltros);
+
+  // Novos filtros
+  const tiposVeiculo = Object.keys(dadosEstatisticas.porTipoVeiculo);
+  const tipoVeiculoFilter = document.getElementById('tipoVeiculoFilter');
+  tiposVeiculo.forEach(tipo => {
+    const option = document.createElement('option');
+    option.value = tipo;
+    option.textContent = tipo;
+    tipoVeiculoFilter.appendChild(option);
+  });
+
+  const coresVeiculo = Object.keys(dadosEstatisticas.porCorVeiculo);
+  const corVeiculoFilter = document.getElementById('corVeiculoFilter');
+  coresVeiculo.forEach(cor => {
+    const option = document.createElement('option');
+    option.value = cor;
+    option.textContent = cor;
+    corVeiculoFilter.appendChild(option);
   });
 }
 
@@ -262,6 +285,8 @@ function criarGraficoPeriodo() {
   });
 }
 
+let markerLayers = {};
+
 function inicializarMapa() {
   mapInstance = L.map('map').setView([-23.5505, -46.6333], 10);
   
@@ -270,21 +295,50 @@ function inicializarMapa() {
     maxZoom: 18
   }).addTo(mapInstance);
   
-  const markerGroups = {
-    'ROUBO': [],
-    'FURTO': [],
-    'OUTROS': []
+  // Inicializa os grupos de marcadores vazios
+  markerLayers = {
+    'ROUBO': L.layerGroup().addTo(mapInstance),
+    'FURTO': L.layerGroup().addTo(mapInstance),
+    'ENCONTRADO': L.layerGroup().addTo(mapInstance)
   };
-  
+
+  atualizarMapa();
+}
+
+function atualizarMapa() {
+  if (!mapInstance || !dadosMapa) return;
+
+  // Limpa os layers existentes
+  Object.values(markerLayers).forEach(layer => layer.clearLayers());
+
+  const showRoubo = document.getElementById('mapRoubo').checked;
+  const showFurto = document.getElementById('mapFurto').checked;
+  const showEncontrado = document.getElementById('mapEncontrado').checked;
+
   dadosMapa.forEach(ocorrencia => {
     if (!ocorrencia.LATITUDE || !ocorrencia.LONGITUDE) return;
     
-    const tipo = ocorrencia.RUBRICA?.includes('ROUBO') ? 'ROUBO' : 
-                 ocorrencia.RUBRICA?.includes('FURTO') ? 'FURTO' : 'OUTROS';
+    let tipo = 'OUTROS';
+    let cor = '#3b82f6'; // Azul padrão para Outros/Não-classificado
+
+    if (ocorrencia.RUBRICA?.includes('ROUBO')) {
+      tipo = 'ROUBO';
+      cor = '#ef4444'; // Vermelho para Roubo
+    } else if (ocorrencia.RUBRICA?.includes('FURTO')) {
+      tipo = 'FURTO';
+      cor = '#f59e0b'; // Laranja para Furto
+    } else if (ocorrencia.RUBRICA?.includes('ENCONTRADO') || ocorrencia.RUBRICA?.includes('RECUPERADO')) {
+      tipo = 'ENCONTRADO';
+      cor = '#10b981'; // Verde para Encontrado/Recuperado
+    }
     
-    const cor = tipo === 'ROUBO' ? '#ef4444' : 
-                tipo === 'FURTO' ? '#f59e0b' : '#3b82f6';
-    
+    // Filtro de exibição
+    if ((tipo === 'ROUBO' && !showRoubo) ||
+        (tipo === 'FURTO' && !showFurto) ||
+        (tipo === 'ENCONTRADO' && !showEncontrado)) {
+      return;
+    }
+
     const marker = L.circleMarker([parseFloat(ocorrencia.LATITUDE), parseFloat(ocorrencia.LONGITUDE)], {
       radius: 4,
       fillColor: cor,
@@ -298,24 +352,20 @@ function inicializarMapa() {
       <strong>${ocorrencia.RUBRICA || 'Desconhecido'}</strong><br>
       <strong>Local:</strong> ${ocorrencia.BAIRRO || 'N/A'}, ${ocorrencia.NOME_MUNICIPIO || 'N/A'}<br>
       <strong>Veículo:</strong> ${ocorrencia.DESCR_MARCA_VEICULO || 'N/A'} (${ocorrencia.DESCR_TIPO_VEICULO || 'N/A'})<br>
+      <strong>Cor:</strong> ${ocorrencia.DESC_COR_VEICULO || 'N/A'}<br>
       <strong>Data:</strong> ${ocorrencia.DATA_OCORRENCIA_BO || 'N/A'}
     `);
     
-    markerGroups[tipo].push(marker);
+    // Adiciona ao layer correto
+    markerLayers[tipo]?.addLayer(marker);
   });
-  
-  const overlays = {};
-  Object.entries(markerGroups).forEach(([tipo, markers]) => {
-    const layer = L.layerGroup(markers);
-    layer.addTo(mapInstance);
-    overlays[tipo] = layer;
-  });
-  
-  L.control.layers(null, overlays).addTo(mapInstance);
 }
 
 function aplicarFiltros() {
-  console.log('Filtros aplicados');
+  // Por enquanto, apenas loga. A lógica de filtragem de gráficos é mais complexa e
+  // exigiria a re-agregação dos dados. Como o usuário não enviou o código de
+  // re-agregação, vamos focar no mapa e no layout.
+  console.log('Filtros de seleção alterados. Para re-filtrar gráficos, a lógica de re-agregação precisa ser implementada.');
 }
 
 document.addEventListener('DOMContentLoaded', carregarDados);
