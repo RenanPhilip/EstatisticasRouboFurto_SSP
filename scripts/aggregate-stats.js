@@ -160,7 +160,7 @@ function processarRegistro(registro) {
   // Para recentes (últimos registros)
   recentesGlobal.push(registro);
 }
-F
+
 function main() {
   console.log('📂 Procurando arquivos de dados completos...\n');
 
