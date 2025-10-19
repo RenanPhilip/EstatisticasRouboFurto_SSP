@@ -426,36 +426,134 @@ function criarGraficoTipoVeiculo() {
     }
   });
 }
+/** Mapeia cores dos veiculos
+ * Mapeia o nome da cor do veículo para um código de cor RGBA (com 0.7 de opacidade).
+ */
+const mapearCorVeiculo = (nomeCor) => {
+    const cor = nomeCor.toUpperCase().trim();
 
-function criarGraficoCores() {
-  const ctx = document.getElementById('corChart')?.getContext('2d');
-  if (!ctx) return;
-  
-  const cores = Object.entries(dadosEstatisticas.porCorVeiculo)
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 10);
-  
-  charts.cores = new Chart(ctx, {
-    type: 'polarArea',
-    data: {
-      labels: cores.map(([k]) => k),
-      datasets: [{
-        data: cores.map(([, v]) => v),
-        backgroundColor: [
-          'rgba(59, 130, 246, 0.7)', 'rgba(139, 92, 246, 0.7)', 'rgba(236, 72, 153, 0.7)',
-          'rgba(245, 158, 11, 0.7)', 'rgba(16, 185, 129, 0.7)', 'rgba(6, 182, 212, 0.7)',
-          'rgba(99, 102, 241, 0.7)', 'rgba(132, 204, 22, 0.7)', 'rgba(239, 68, 68, 0.7)', 'rgba(168, 85, 247, 0.7)'
-        ],
-        borderWidth: 2,
-        borderColor: '#1e293b'
-      }]
-    },
-    options: {
-      responsive: true,
-      plugins: { legend: { position: 'right', labels: { color: '#94a3b8' } } },
-      scales: { r: { grid: { color: '#334155' } } }
+    // Mapeamento que cobre todas as suas cores
+    switch (cor) {
+        case 'PRETA':
+            return 'rgba(0, 0, 0, 0.7)';
+        case 'BRANCO':
+        case 'BRANCA': // Cobrindo variações de gênero (mesmo que só tenha 'BRANCO')
+            //return 'rgba(255, 255, 255, 0.7)';
+            return 'rgba(242, 240, 239, 0.7)';
+        case 'PRATA':
+        case 'CINZA':
+            return 'rgba(150, 150, 150, 0.7)';
+        case 'VERMELHO':
+        case 'VERMELHA':
+        case 'GRENA': // Grena é um tom de vermelho/vinho
+            return 'rgba(220, 20, 60, 0.7)'; // Crimson
+        case 'AZUL':
+            return 'rgba(59, 130, 246, 0.7)';
+        case 'VERDE':
+            return 'rgba(16, 185, 129, 0.7)';
+        case 'AMARELO':
+            return 'rgba(255, 255, 0, 0.7)';
+        case 'LARANJA':
+            return 'rgba(245, 158, 11, 0.7)';
+        case 'MARROM':
+        case 'BEGE':
+            return 'rgba(139, 69, 19, 0.7)';
+        case 'ROXA':
+        case 'ROXO':
+        case 'ROSA': // Rosa como um tom mais claro de roxo/magenta
+            return 'rgba(192, 38, 211, 0.7)'; // Magenta/Roxo
+        case 'DOURADA':
+            return 'rgba(255, 215, 0, 0.7)'; // Gold
+        case 'FANTASIA':
+        case 'NÃO INFORMADO':
+        case 'DESCONHECIDO':
+        default:
+            // Cores de fallback para dados incompletos ou cores multi-tom
+            return 'rgba(168, 168, 168, 0.7)'; // Cinza neutro
     }
-  });
+};
+
+/** Mapeia cores de cada borda
+ * Mapeia o nome da cor do veículo para um código de cor HEX para a borda.
+ */
+const mapearCorBorda = (nomeCor) => {
+    const cor = nomeCor.toUpperCase().trim();
+    switch (cor) {
+        case 'PRETA': return '#000000';
+        case 'BRANCO':
+        case 'BRANCA': return '#000000ff'; // Cor clara para borda de fundo escuro
+        case 'PRATA':
+        case 'CINZA': return '#969696';
+        case 'VERMELHO':
+        case 'VERMELHA':
+        case 'GRENA': return '#dc143c'; // Crimson
+        case 'AZUL': return '#3b82f6';
+        case 'VERDE': return '#10b981';
+        case 'AMARELO': return '#FFFF00';
+        case 'LARANJA': return '#f59e0b';
+        case 'MARROM':
+        case 'BEGE': return '#8b4513';
+        case 'ROXA':
+        case 'ROXO':
+        case 'ROSA': return '#c026d3'; // Magenta
+        case 'DOURADA': return '#FFD700';
+        case 'FANTASIA':
+        case 'NÃO INFORMADO':
+        case 'DESCONHECIDO':
+        default: return '#555555';
+    }
+};
+// Cria grafico de cores dos veiculos, com as cores e as bordas mapeadas
+function criarGraficoCores() {
+    const ctx = document.getElementById('corChart')?.getContext('2d');
+    if (!ctx) return;
+
+    const cores = Object.entries(dadosEstatisticas.porCorVeiculo)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 10);
+    
+    const nomesDasCores = cores.map(([k]) => k);
+
+    // Usa as novas funções de mapeamento:
+    const backgroundColors = nomesDasCores.map(mapearCorVeiculo);
+    const borderColors = nomesDasCores.map(mapearCorBorda);
+    
+    // Destrói o gráfico existente antes de criar um novo (se aplicável)
+    if (charts.cores) {
+        charts.cores.destroy();
+    }
+
+    charts.cores = new Chart(ctx, {
+        type: 'polarArea',
+        data: {
+            labels: nomesDasCores,
+            datasets: [{
+                label: 'Ocorrências',
+                data: cores.map(([, v]) => v),
+                backgroundColor: backgroundColors, 
+                borderColor: borderColors, 
+                borderWidth: 2
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: { 
+                legend: { position: 'right', labels: { color: '#94a3b8' } },
+                tooltip: {
+                    callbacks: {
+                         label: function(context) {
+                             const valor = context.parsed.r;
+                             const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                             const percentual = ((valor / total) * 100).toFixed(1);
+                             const valorFormatado = valor.toLocaleString('pt-BR');
+                             return `Ocorrências: ${valorFormatado} (${percentual}%)`;
+                         }
+                    }
+                }
+            },
+            scales: { r: { grid: { color: '#334155' } } }
+        }
+    });
 }
 
 function criarGraficoMunicipios() {
