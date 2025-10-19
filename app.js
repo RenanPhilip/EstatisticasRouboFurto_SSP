@@ -122,22 +122,18 @@ function popularFiltros() {
   });
 }
 
+// Cards de cabeçalho
 function atualizarCards() {
-  const totalGeral = (dadosEstatisticas.porRubrica['ROUBO DE VEÍCULO'] || 0) + 
-                     (dadosEstatisticas.porRubrica['FURTO DE VEÍCULO'] || 0);
-  
-  document.getElementById('totalGeral').textContent = totalGeral.toLocaleString('pt-BR');
-  document.getElementById('totalRoubos').textContent = (dadosEstatisticas.porRubrica['ROUBO DE VEÍCULO'] || 0).toLocaleString('pt-BR');
-  document.getElementById('totalFurtos').textContent = (dadosEstatisticas.porRubrica['FURTO DE VEÍCULO'] || 0).toLocaleString('pt-BR');
-  document.getElementById('totalMunicipios').textContent = Object.keys(dadosEstatisticas.porMunicipio).length;
+  const totalGeral = dadosEstatisticas.totalRegistros || 'N/A';
+  const anosAnalisados = `${Object.keys(dadosEstatisticas.porAno)[Object.keys(dadosEstatisticas.porAno).length - 1]} - ${Object.keys(dadosEstatisticas.porAno)[0]}` || 'N/A';
   
   const totalFlagrantes = dadosEstatisticas.porFlagrante.sim + dadosEstatisticas.porFlagrante.nao;
   const percFlagrantes = totalFlagrantes > 0 ? ((dadosEstatisticas.porFlagrante.sim / totalFlagrantes) * 100).toFixed(1) : 0;
+
+  document.getElementById('totalGeral').textContent = totalGeral.toLocaleString('pt-BR');
+  document.getElementById('anosAnalisados').textContent = anosAnalisados.toLocaleString('pt-BR') || 'N/A';
+  document.getElementById('totalMunicipios').textContent = Object.keys(dadosEstatisticas.porMunicipio).length;
   document.getElementById('totalFlagrantes').textContent = `${percFlagrantes}%`;
-  
-  const totalAutoria = dadosEstatisticas.porAutoria.conhecida + dadosEstatisticas.porAutoria.desconhecida;
-  const percAutoria = totalAutoria > 0 ? ((dadosEstatisticas.porAutoria.conhecida / totalAutoria) * 100).toFixed(1) : 0;
-  document.getElementById('autoriaConhecida').textContent = `${percAutoria}%`;
 }
 
 function criarTodosGraficos() {
