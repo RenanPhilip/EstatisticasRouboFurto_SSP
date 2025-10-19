@@ -12,8 +12,8 @@ async function carregarDados() {
   try {
     console.log('Carregando dados...');
     
-    // Carrega estatísticas
-    const respEstatisticas = await fetch('data/estatisticas.json');
+    // Carrega estatísticas gerais
+    const respEstatisticas = await fetch('./data/estatisticas.json');
     if (!respEstatisticas.ok) throw new Error('Estatísticas não encontrado');
     
     const textoEst = await respEstatisticas.text();
@@ -29,7 +29,7 @@ async function carregarDados() {
       throw new Error('Dados inválidos ou vazios');
     }
     
-    // Carrega mapa
+    // Carrega mapa de ocorrencia Lng Lat
     const respMapa = await fetch('data/mapa-ocorrencias.json');
     if (respMapa.ok) {
       const textoMapa = await respMapa.text();
@@ -38,7 +38,7 @@ async function carregarDados() {
       }
     }
     
-    // Atualiza interface
+    // Atualiza interface do cabeçalho
     const dataAtualizacao = new Date(dadosEstatisticas.ultimaAtualizacao);
     document.getElementById('updateInfo').innerHTML = `
       <strong>Última atualização:</strong> ${dataAtualizacao.toLocaleDateString('pt-BR')} às ${dataAtualizacao.toLocaleTimeString('pt-BR')}
@@ -288,7 +288,8 @@ function criarGraficoPeriodo() {
 let markerLayers = {};
 
 function inicializarMapa() {
-  mapInstance = L.map('map').setView([-23.5505, -46.6333], 10);
+  // mapInstance = L.map('map').setView([-23.54731471, -46.63181545], 100);
+  mapInstance = L.map('map').setView([-23.55029, -46.63397], 5.5);
   
   L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
     attribution: '&copy; OpenStreetMap contributors &copy; CARTO',
@@ -299,7 +300,8 @@ function inicializarMapa() {
   markerLayers = {
     'ROUBO': L.layerGroup().addTo(mapInstance),
     'FURTO': L.layerGroup().addTo(mapInstance),
-    'ENCONTRADO': L.layerGroup().addTo(mapInstance)
+    'ENCONTRADO': L.layerGroup().addTo(mapInstance),
+    'OUTROS': L.layerGroup().addTo(mapInstance)
   };
 
   atualizarMapa();
@@ -314,33 +316,43 @@ function atualizarMapa() {
   const showRoubo = document.getElementById('mapRoubo').checked;
   const showFurto = document.getElementById('mapFurto').checked;
   const showEncontrado = document.getElementById('mapEncontrado').checked;
+  const showOutros = document.getElementById('mapOutros').checked;
 
   dadosMapa.forEach(ocorrencia => {
-    if (!ocorrencia.LATITUDE || !ocorrencia.LONGITUDE) return;
+    if (!ocorrencia.LONGITUDE || !ocorrencia.LATITUDE) return;
+    const latStr = ocorrencia.LATITUDE.replace(',', '.');
+    const lonStr = ocorrencia.LONGITUDE.replace(',', '.');
     
     let tipo = 'OUTROS';
-    let cor = '#3b82f6'; // Azul padrão para Outros/Não-classificado
+    let cor = '#00bbffff'; // Azul padrão para Outros/Não-classificado
 
-    if (ocorrencia.RUBRICA?.includes('ROUBO')) {
+    if (ocorrencia.RUBRICA?.toUpperCase().includes('ROUBO')) {
       tipo = 'ROUBO';
-      cor = '#ef4444'; // Vermelho para Roubo
-    } else if (ocorrencia.RUBRICA?.includes('FURTO')) {
+      cor = '#ff0000ff'; // Vermelho para Roubo
+    } else if (ocorrencia.RUBRICA?.toUpperCase().includes('FURTO')) {
       tipo = 'FURTO';
-      cor = '#f59e0b'; // Laranja para Furto
-    } else if (ocorrencia.RUBRICA?.includes('ENCONTRADO') || ocorrencia.RUBRICA?.includes('RECUPERADO')) {
+      cor = '#ffa200ff'; // Laranja para Furto
+    } else if (
+      ocorrencia.RUBRICA?.toUpperCase().includes('ENCONTRADO') ||
+      ocorrencia.RUBRICA?.toUpperCase().includes('RECUPERADO') ||
+      ocorrencia.RUBRICA?.toUpperCase().includes('LOCALIZA')
+    ) {
       tipo = 'ENCONTRADO';
-      cor = '#10b981'; // Verde para Encontrado/Recuperado
+      cor = '#00ff1eff'; // Verde para Encontrado/Recuperado
     }
     
     // Filtro de exibição
-    if ((tipo === 'ROUBO' && !showRoubo) ||
+    if (
+      (tipo === 'ROUBO' && !showRoubo) ||
         (tipo === 'FURTO' && !showFurto) ||
-        (tipo === 'ENCONTRADO' && !showEncontrado)) {
+      (tipo === 'ENCONTRADO' && !showEncontrado) ||
+      (tipo === 'OUTROS' && !showOutros)
+    ) {
       return;
     }
 
-    const marker = L.circleMarker([parseFloat(ocorrencia.LATITUDE), parseFloat(ocorrencia.LONGITUDE)], {
-      radius: 4,
+    const marker = L.circleMarker([parseFloat(latStr), parseFloat(lonStr)], {
+      radius: 5,
       fillColor: cor,
       color: '#fff',
       weight: 1,
@@ -353,7 +365,9 @@ function atualizarMapa() {
       <strong>Local:</strong> ${ocorrencia.BAIRRO || 'N/A'}, ${ocorrencia.NOME_MUNICIPIO || 'N/A'}<br>
       <strong>Veículo:</strong> ${ocorrencia.DESCR_MARCA_VEICULO || 'N/A'} (${ocorrencia.DESCR_TIPO_VEICULO || 'N/A'})<br>
       <strong>Cor:</strong> ${ocorrencia.DESC_COR_VEICULO || 'N/A'}<br>
-      <strong>Data:</strong> ${ocorrencia.DATA_OCORRENCIA_BO || 'N/A'}
+      <strong>Data:</strong> ${ocorrencia.DATA_OCORRENCIA_BO || 'N/A'}<br>
+      <strong>Latuutude:</strong> ${latStr || 'N/A'}<br>
+      <strong>Longitude:</strong> ${lonStr || 'N/A'}
     `);
     
     // Adiciona ao layer correto
