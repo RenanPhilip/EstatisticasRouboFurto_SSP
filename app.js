@@ -147,40 +147,138 @@ function criarTodosGraficos() {
   criarGraficoPeriodo();
 }
 
+// Função auxiliar para reestruturar os dados de AAAA/MM para Múltiplos Datasets
+function reestruturarDadosPorAno(dados) {
+  const dadosPorAno = {};
+  const anos = new Set();
+  // Cria um array com os meses de '01' a '12' para o eixo X
+  const meses = Array.from({ length: 12 }, (_, i) => String(i + 1).padStart(2, '0'));
+
+  // 1. Agrupar os dados por Ano e Mês (MM)
+  Object.entries(dados.porMesAno).forEach(([mesAno, valor]) => {
+    // Assume o formato AAAA/MM
+    const [ano, mes] = mesAno.split('/');
+    anos.add(ano);
+
+    if (!dadosPorAno[ano]) {
+      dadosPorAno[ano] = {};
+    }
+    // Armazena o valor indexado pelo Mês (MM)
+    dadosPorAno[ano][mes] = valor;
+  });
+
+  // 2. Cria uma lista de anos ordenados
+  const anosOrdenados = Array.from(anos).sort();
+
+  return { dadosPorAno, anosOrdenados, meses };
+}
+
 function criarGraficoTimeline() {
   const ctx = document.getElementById('monthlyChart')?.getContext('2d');
   if (!ctx) return;
   
-  const mesAnoOrdenado = Object.entries(dadosEstatisticas.porMesAno)
-    .sort((a, b) => {
-      const [mesA, anoA] = a[0].split('/');
-      const [mesB, anoB] = b[0].split('/');
-      return new Date(anoA, mesA - 1) - new Date(anoB, mesB - 1);
-    });
+  // Lista de cores para garantir diferenciação visual (adicione mais se necessário)
+  const coresCiclicas = [
+    '#3b82f6', // Azul (ex: 2023)
+    '#ef4444', // Vermelho (ex: 2024)
+    '#10b981', // Verde (ex: 2022)
+    '#f59e0b', // Amarelo/Laranja (ex: 2021)
+    '#a855f7', // Roxo (ex: 2020)
+    '#64748b'  // Cinza
+  ];
+
+  // Estrutura os dados
+  const { dadosPorAno, anosOrdenados, meses } = reestruturarDadosPorAno(dadosEstatisticas);
+
+  // Mapeia os anos para criar os Datasets
+  const datasets = anosOrdenados.map((ano, index) => {
+    // Usa null para meses sem dados. Isso garante que as linhas futuras não sejam plotadas.
+    const dadosDoAno = meses.map(mes => dadosPorAno[ano][mes] || null);
+    const cor = coresCiclicas[index % coresCiclicas.length];
+
+    return {
+      label: `Ano ${ano}`,
+      data: dadosDoAno,
+      borderColor: cor,
+      backgroundColor: 'transparent', // Linhas separadas não precisam de preenchimento
+      tension: 0.1, // Linhas mais suaves
+      fill: false,
+      borderWidth: 2,
+      pointRadius: 4,
+      pointBackgroundColor: cor,
+      pointBorderColor: '#fff',
+      pointHoverRadius: 6
+    };
+  });
+
+  // Os rótulos do eixo X são apenas os 12 meses
+  const labelsDoEixoX = meses.map(mes => `Mês ${mes}`);
+
+  // Destruir o gráfico existente antes de criar um novo (se aplicável)
+  if (charts.timeline) {
+    charts.timeline.destroy();
+  }
   
   charts.timeline = new Chart(ctx, {
     type: 'line',
     data: {
-      labels: mesAnoOrdenado.map(([k]) => k),
-      datasets: [{
-        label: 'Ocorrências por Mês',
-        data: mesAnoOrdenado.map(([, v]) => v),
-        borderColor: '#3b82f6',
-        backgroundColor: 'rgba(59, 130, 246, 0.1)',
-        tension: 0.4,
-        fill: true,
-        borderWidth: 3
-      }]
+      labels: labelsDoEixoX, // Eixo X de Mês 01 a Mês 12
+      datasets: datasets
     },
     options: {
       responsive: true,
       maintainAspectRatio: true,
-      plugins: { legend: { display: false } },
+      plugins: {
+        legend: { 
+                display: true,
+                position: 'top',
+                labels: {
+                    color: '#000000ff', // Cor da fonte (se for fundo escuro)
+                    
+                    // =======================================================
+                    // 1. ALTERAÇÃO PRINCIPAL: Preencher a caixa de cor (useBoxPadding)
+                    // Define se a forma na legenda deve ser preenchida.
+                    usePointStyle: true, // Garante que continue sendo uma caixa (ou retangular)
+                    useBorderRadius: true, // Adiciona bordas suaves (opcional, mas fica bonito)
+                    
+                    // 2. Aumentar o Tamanho e Espaçamento
+                    boxWidth: 60,     // Aumenta a largura da caixa de cor (padrão é 40)
+                    boxHeight: 40,    // Aumenta a altura da caixa de cor
+                    padding: 30,      // Aumenta o espaço entre os itens da legenda
+                    font: {
+                        size: 15,     // Aumenta o tamanho da fonte do texto na legenda
+                        //weight: 'bold' // Deixa o texto em negrito (opcional, mas melhora a visibilidade)
+                    },
+                    // =======================================================
+                }
+            },
+        tooltip: {
+          mode: 'index',
+          intersect: false,
+          callbacks: {
+            // Formata o título do tooltip para mostrar o Ano
+            title: function (context) {
+              const mes = labelsDoEixoX[context[0].dataIndex];
+              const ano = context[0].dataset.label.replace('Ano ', '');
+              return `${mes} de ${ano}`;
+            }
+          }
+        }
+      },
       scales: {
-        y: { beginAtZero: true, grid: { color: '#334155' } },
-        x: { grid: { display: false } }
+        y: {
+          beginAtZero: true,
+          grid: { color: 'rgba(255, 255, 255, 0.1)' } // Grid mais sutil
+        },
+        x: {
+          grid: { display: false },
+          ticks: {
+            color: '#94a3b8' // Cor dos rótulos do eixo X
+          }
+        }
       }
     }
+
   });
 }
 
