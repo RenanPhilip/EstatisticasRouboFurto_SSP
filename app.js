@@ -11,24 +11,24 @@ Chart.defaults.borderColor = '#334155';
 async function carregarDados() {
   try {
     console.log('Carregando dados...');
-    
+
     // Carrega estatísticas gerais
     const respEstatisticas = await fetch('./data/estatisticas.json');
     if (!respEstatisticas.ok) throw new Error('Estatísticas não encontrado');
-    
+
     const textoEst = await respEstatisticas.text();
-    
+
     // Valida se é JSON válido (não ponteiro LFS)
     if (textoEst.includes('git-lfs') || textoEst.includes('version https://git-lfs')) {
       throw new Error('Arquivo é ponteiro LFS (dados ainda sendo processados)');
     }
-    
+
     dadosEstatisticas = JSON.parse(textoEst);
-    
+
     if (!dadosEstatisticas || !dadosEstatisticas.totalRegistros) {
       throw new Error('Dados inválidos ou vazios');
     }
-    
+
     // Carrega mapa de ocorrencia Lng Lat
     const respMapa = await fetch('data/mapa-ocorrencias.json');
     if (respMapa.ok) {
@@ -37,18 +37,18 @@ async function carregarDados() {
         dadosMapa = JSON.parse(textoMapa);
       }
     }
-    
+
     // Atualiza interface do cabeçalho
     const dataAtualizacao = new Date(dadosEstatisticas.ultimaAtualizacao);
     document.getElementById('updateInfo').innerHTML = `
       <strong>Última atualização:</strong> ${dataAtualizacao.toLocaleDateString('pt-BR')} às ${dataAtualizacao.toLocaleTimeString('pt-BR')}
       <br><strong>Total de registros:</strong> ${dadosEstatisticas.totalRegistros.toLocaleString('pt-BR')}
     `;
-    
+
     popularFiltros();
     atualizarCards();
     criarTodosGraficos();
-    
+
     if (dadosMapa && dadosMapa.length > 0) {
       inicializarMapa();
     }
@@ -56,11 +56,11 @@ async function carregarDados() {
     document.querySelectorAll('select').forEach(select => {
       select.addEventListener('change', aplicarFiltros);
     });
-    
+
     document.querySelectorAll('.map-controls input[type="checkbox"]').forEach(checkbox => {
       checkbox.addEventListener('change', atualizarMapa);
     });
-    
+
   } catch (error) {
     console.error('Erro ao carregar dados:', error);
     document.querySelector('.container').insertAdjacentHTML('afterbegin', `
@@ -82,7 +82,7 @@ function popularFiltros() {
     option.textContent = ano;
     yearFilter.appendChild(option);
   });
-  
+
   const municipios = Object.entries(dadosEstatisticas.porMunicipio)
     .sort((a, b) => b[1] - a[1])
     .slice(0, 20);
@@ -93,7 +93,7 @@ function popularFiltros() {
     option.textContent = municipio;
     municipioFilter.appendChild(option);
   });
-  
+
   const rubricas = Object.keys(dadosEstatisticas.porRubrica);
   const rubricaFilter = document.getElementById('rubricaFilter');
   rubricas.forEach(rubrica => {
@@ -127,7 +127,7 @@ function popularFiltros() {
 function atualizarCards() {
   const totalGeral = dadosEstatisticas.totalRegistros || 'N/A';
   const anosAnalisados = `${Object.keys(dadosEstatisticas.porAno)[Object.keys(dadosEstatisticas.porAno).length - 1]} - ${Object.keys(dadosEstatisticas.porAno)[0]}` || 'N/A';
-  
+
   const totalFlagrantes = dadosEstatisticas.porFlagrante.sim + dadosEstatisticas.porFlagrante.nao;
   const percFlagrantes = totalFlagrantes > 0 ? ((dadosEstatisticas.porFlagrante.sim / totalFlagrantes) * 100).toFixed(1) : 0;
 
@@ -179,7 +179,7 @@ function reestruturarDadosPorAno(dados) {
 function criarGraficoTimeline() {
   const ctx = document.getElementById('monthlyChart')?.getContext('2d');
   if (!ctx) return;
-  
+
   // Lista de cores para garantir diferenciação visual (adicione mais se necessário)
   const coresCiclicas = [
     '#3b82f6', // Azul (ex: 2023)
@@ -221,7 +221,7 @@ function criarGraficoTimeline() {
   if (charts.timeline) {
     charts.timeline.destroy();
   }
-  
+
   charts.timeline = new Chart(ctx, {
     type: 'line',
     data: {
@@ -232,29 +232,29 @@ function criarGraficoTimeline() {
       responsive: true,
       maintainAspectRatio: true,
       plugins: {
-        legend: { 
-                display: true,
-                position: 'top',
-                labels: {
-                    color: '#000000ff', // Cor da fonte (se for fundo escuro)
-                    
-                    // =======================================================
-                    // 1. ALTERAÇÃO PRINCIPAL: Preencher a caixa de cor (useBoxPadding)
-                    // Define se a forma na legenda deve ser preenchida.
-                    usePointStyle: true, // Garante que continue sendo uma caixa (ou retangular)
-                    useBorderRadius: true, // Adiciona bordas suaves (opcional, mas fica bonito)
-                    
-                    // 2. Aumentar o Tamanho e Espaçamento
-                    boxWidth: 60,     // Aumenta a largura da caixa de cor (padrão é 40)
-                    boxHeight: 40,    // Aumenta a altura da caixa de cor
-                    padding: 30,      // Aumenta o espaço entre os itens da legenda
-                    font: {
-                        size: 15,     // Aumenta o tamanho da fonte do texto na legenda
-                        //weight: 'bold' // Deixa o texto em negrito (opcional, mas melhora a visibilidade)
-                    },
-                    // =======================================================
-                }
+        legend: {
+          display: true,
+          position: 'top',
+          labels: {
+            color: '#000000ff', // Cor da fonte (se for fundo escuro)
+
+            // =======================================================
+            // 1. ALTERAÇÃO PRINCIPAL: Preencher a caixa de cor (useBoxPadding)
+            // Define se a forma na legenda deve ser preenchida.
+            usePointStyle: true, // Garante que continue sendo uma caixa (ou retangular)
+            useBorderRadius: true, // Adiciona bordas suaves (opcional, mas fica bonito)
+
+            // 2. Aumentar o Tamanho e Espaçamento
+            boxWidth: 60,     // Aumenta a largura da caixa de cor (padrão é 40)
+            boxHeight: 40,    // Aumenta a altura da caixa de cor
+            padding: 30,      // Aumenta o espaço entre os itens da legenda
+            font: {
+              size: 15,     // Aumenta o tamanho da fonte do texto na legenda
+              //weight: 'bold' // Deixa o texto em negrito (opcional, mas melhora a visibilidade)
             },
+            // =======================================================
+          }
+        },
         tooltip: {
           mode: 'index',
           intersect: false,
@@ -288,10 +288,10 @@ function criarGraficoTimeline() {
 function criarGraficoHoras() {
   const ctx = document.getElementById('hourChart')?.getContext('2d');
   if (!ctx) return;
-  
+
   const horas = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0'));
   const valores = horas.map(h => dadosEstatisticas.porHora[h] || 0);
-  
+
   charts.hour = new Chart(ctx, {
     type: 'bar',
     data: {
@@ -322,72 +322,72 @@ function criarGraficoHoras() {
 function criarGraficoMarcas() {
   const ctx = document.getElementById('marcasChart')?.getContext('2d');
   if (!ctx) return;
-  
-    const dadosPorMarcaModelo = dadosEstatisticas.porMarcaVeiculo;
 
-    // 1. AGRUPAMENTO POR MARCA E COLETA DE DETALHES DO MODELO
-    const dadosAgrupadosPorMarca = {};
-    const marcaRegex = /^([A-Z0-9\/]+)/; // Regex para pegar a marca (ex: HONDA, FIAT, VW, I/VW)
+  const dadosPorMarcaModelo = dadosEstatisticas.porMarcaVeiculo;
 
-    Object.entries(dadosPorMarcaModelo).forEach(([marcaModelo, contagem]) => {
-        // Separa Marca do Modelo. Se não tiver barra, usa a string toda como marca.
-        const partes = marcaModelo.split('/');
-        let marca, modelo;
+  // 1. AGRUPAMENTO POR MARCA E COLETA DE DETALHES DO MODELO
+  const dadosAgrupadosPorMarca = {};
+  const marcaRegex = /^([A-Z0-9\/]+)/; // Regex para pegar a marca (ex: HONDA, FIAT, VW, I/VW)
 
-        if (partes.length >= 2) {
-            // Assume que o primeiro elemento é a marca e o restante é o modelo (pode ter barra no modelo)
-            marca = partes[0].trim() || 'DESCONHECIDO';
-            modelo = partes.slice(1).join('/').trim();
-        } else {
-            // Se não tem barra, a string inteira é tratada como marca (ou tipo especial)
-            marca = marcaModelo.trim();
-            modelo = 'Diversos/Não Detalhado'; 
-        }
+  Object.entries(dadosPorMarcaModelo).forEach(([marcaModelo, contagem]) => {
+    // Separa Marca do Modelo. Se não tiver barra, usa a string toda como marca.
+    const partes = marcaModelo.split('/');
+    let marca, modelo;
 
-        // Inicializa a estrutura da marca, se for a primeira vez
-        if (!dadosAgrupadosPorMarca[marca]) {
-            dadosAgrupadosPorMarca[marca] = {
-                total: 0,
-                modelos: {} // Armazenará os modelos e suas contagens
-            };
-        }
-
-        // Soma o total da marca e armazena o detalhe do modelo
-        dadosAgrupadosPorMarca[marca].total += contagem;
-        dadosAgrupadosPorMarca[marca].modelos[modelo] = contagem;
-    });
-
-    // 2. FILTRAGEM E PREPARAÇÃO DO TOP N
-    const topN = 10; // Defina quantos itens você quer no gráfico
-    
-    // Converte para array, ordena pelo total da marca e pega o TOP N
-    const topMarcas = Object.entries(dadosAgrupadosPorMarca)
-        .sort((a, b) => b[1].total - a[1].total)
-        .slice(0, topN);
-
-    // 3. PREPARAÇÃO DO TOOLTIP (Para facilitar o acesso rápido no callback)
-    const dadosTooltip = topMarcas.map(([marca, data]) => ({
-        marca: marca,
-        total: data.total,
-        // Converte os modelos em um array ordenado para o tooltip
-        detalhes: Object.entries(data.modelos)
-            .sort((a, b) => b[1] - a[1]) // Ordena modelos do mais roubado para o menos
-            .slice(0, 5) // Opcional: Mostra apenas os 5 modelos mais roubados no tooltip
-    }));
-    
-    // Destrói o gráfico existente antes de criar um novo (se aplicável)
-    if (charts.marcas) {
-        charts.marcas.destroy();
+    if (partes.length >= 2) {
+      // Assume que o primeiro elemento é a marca e o restante é o modelo (pode ter barra no modelo)
+      marca = partes[0].trim() || 'DESCONHECIDO';
+      modelo = partes.slice(1).join('/').trim();
+    } else {
+      // Se não tem barra, a string inteira é tratada como marca (ou tipo especial)
+      marca = marcaModelo.trim();
+      modelo = 'Diversos/Não Detalhado';
     }
 
-    // 4. CRIAÇÃO DO GRÁFICO DE BARRAS
+    // Inicializa a estrutura da marca, se for a primeira vez
+    if (!dadosAgrupadosPorMarca[marca]) {
+      dadosAgrupadosPorMarca[marca] = {
+        total: 0,
+        modelos: {} // Armazenará os modelos e suas contagens
+      };
+    }
+
+    // Soma o total da marca e armazena o detalhe do modelo
+    dadosAgrupadosPorMarca[marca].total += contagem;
+    dadosAgrupadosPorMarca[marca].modelos[modelo] = contagem;
+  });
+
+  // 2. FILTRAGEM E PREPARAÇÃO DO TOP N
+  const topN = 10; // Defina quantos itens você quer no gráfico
+
+  // Converte para array, ordena pelo total da marca e pega o TOP N
+  const topMarcas = Object.entries(dadosAgrupadosPorMarca)
+    .sort((a, b) => b[1].total - a[1].total)
+    .slice(0, topN);
+
+  // 3. PREPARAÇÃO DO TOOLTIP (Para facilitar o acesso rápido no callback)
+  const dadosTooltip = topMarcas.map(([marca, data]) => ({
+    marca: marca,
+    total: data.total,
+    // Converte os modelos em um array ordenado para o tooltip
+    detalhes: Object.entries(data.modelos)
+      .sort((a, b) => b[1] - a[1]) // Ordena modelos do mais roubado para o menos
+      .slice(0, 5) // Opcional: Mostra apenas os 5 modelos mais roubados no tooltip
+  }));
+
+  // Destrói o gráfico existente antes de criar um novo (se aplicável)
+  if (charts.marcas) {
+    charts.marcas.destroy();
+  }
+
+  // 4. CRIAÇÃO DO GRÁFICO DE BARRAS
   charts.marcas = new Chart(ctx, {
     type: 'bar',
     data: {
-            labels: topMarcas.map(([marca]) => marca || 'Desconhecido'),
+      labels: topMarcas.map(([marca]) => marca || 'Desconhecido'),
       datasets: [{
-                label: 'Ocorrências por Marca',
-                data: topMarcas.map(([, data]) => data.total || 0),
+        label: 'Ocorrências por Marca',
+        data: topMarcas.map(([, data]) => data.total || 0),
         backgroundColor: 'rgba(236, 72, 153, 0.7)',
         borderColor: '#ec4899',
         borderWidth: 2
@@ -396,41 +396,41 @@ function criarGraficoMarcas() {
     options: {
       indexAxis: 'y',
       responsive: true,
-            plugins: { 
-                legend: { display: false },
-                tooltip: {
-                    callbacks: {
-                        // Título: Marca e Total
-                        title: function(context) {
-                            const index = context[0].dataIndex;
-                            const { marca, total } = dadosTooltip[index];
-                            const totalFormatado = total.toLocaleString('pt-BR');
-                            return `${marca} (Total: ${totalFormatado})`;
-                        },
-                        // Corpo: Lista os Modelos mais Roubados
-                        label: function(context) {
-                            const index = context.dataIndex;
-                            const { detalhes } = dadosTooltip[index];
-                            
-                            const linhasDetalhe = ['Modelos mais Frequentes:']; // Primeira linha de subtítulo
-                            
-                            // Adiciona as linhas detalhadas dos modelos
-                            detalhes.forEach(([modelo, contagem]) => {
-                                const valorFormatado = contagem.toLocaleString('pt-BR');
-                                linhasDetalhe.push(`  - ${modelo}: ${valorFormatado}`);
-                            });
-                            
-                            // Se tiver mais de 5 modelos, adiciona uma linha indicando isso
-                            if (Object.keys(dadosAgrupadosPorMarca[dadosTooltip[index].marca].modelos).length > 5) {
-                                linhasDetalhe.push(`  + Mais ${Object.keys(dadosAgrupadosPorMarca[dadosTooltip[index].marca].modelos).length - 5} modelos...`);
-                            }
-                            
-                            // Retorna o array de strings para o tooltip
-                            return linhasDetalhe;
-                        }
-                    }
-                }
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            // Título: Marca e Total
+            title: function (context) {
+              const index = context[0].dataIndex;
+              const { marca, total } = dadosTooltip[index];
+              const totalFormatado = total.toLocaleString('pt-BR');
+              return `${marca} (Total: ${totalFormatado})`;
             },
+            // Corpo: Lista os Modelos mais Roubados
+            label: function (context) {
+              const index = context.dataIndex;
+              const { detalhes } = dadosTooltip[index];
+
+              const linhasDetalhe = ['Modelos mais Frequentes:']; // Primeira linha de subtítulo
+
+              // Adiciona as linhas detalhadas dos modelos
+              detalhes.forEach(([modelo, contagem]) => {
+                const valorFormatado = contagem.toLocaleString('pt-BR');
+                linhasDetalhe.push(`  - ${modelo}: ${valorFormatado}`);
+              });
+
+              // Se tiver mais de 5 modelos, adiciona uma linha indicando isso
+              if (Object.keys(dadosAgrupadosPorMarca[dadosTooltip[index].marca].modelos).length > 5) {
+                linhasDetalhe.push(`  + Mais ${Object.keys(dadosAgrupadosPorMarca[dadosTooltip[index].marca].modelos).length - 5} modelos...`);
+              }
+
+              // Retorna o array de strings para o tooltip
+              return linhasDetalhe;
+            }
+          }
+        }
+      },
       scales: {
         x: { beginAtZero: true, grid: { color: '#334155' } },
         y: { grid: { display: false } }
@@ -442,12 +442,12 @@ function criarGraficoMarcas() {
 function criarGraficoPeriodo() {
   const ctx = document.getElementById('periodoChart')?.getContext('2d');
   if (!ctx) return;
-  
+
   const periodos = Object.entries(dadosEstatisticas.porPeriodo || {})
     .sort((a, b) => b[1] - a[1]);
-  
+
   if (periodos.length === 0) return;
-  
+
   charts.periodo = new Chart(ctx, {
     type: 'bar',
     data: {
@@ -477,12 +477,12 @@ let markerLayers = {};
 function inicializarMapa() {
   // mapInstance = L.map('map').setView([-23.54731471, -46.63181545], 100);
   mapInstance = L.map('map').setView([-23.55029, -46.63397], 5.5);
-  
+
   L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
     attribution: '&copy; OpenStreetMap contributors &copy; CARTO',
     maxZoom: 18
   }).addTo(mapInstance);
-  
+
   // Inicializa os grupos de marcadores vazios
   markerLayers = {
     'ROUBO': L.layerGroup().addTo(mapInstance),
@@ -509,7 +509,7 @@ function atualizarMapa() {
     if (!ocorrencia.LONGITUDE || !ocorrencia.LATITUDE) return;
     const latStr = ocorrencia.LATITUDE.replace(',', '.');
     const lonStr = ocorrencia.LONGITUDE.replace(',', '.');
-    
+
     let tipo = 'OUTROS';
     let cor = '#00bbffff'; // Azul padrão para Outros/Não-classificado
 
@@ -527,11 +527,11 @@ function atualizarMapa() {
       tipo = 'ENCONTRADO';
       cor = '#00ff1eff'; // Verde para Encontrado/Recuperado
     }
-    
+
     // Filtro de exibição
     if (
       (tipo === 'ROUBO' && !showRoubo) ||
-        (tipo === 'FURTO' && !showFurto) ||
+      (tipo === 'FURTO' && !showFurto) ||
       (tipo === 'ENCONTRADO' && !showEncontrado) ||
       (tipo === 'OUTROS' && !showOutros)
     ) {
@@ -546,7 +546,7 @@ function atualizarMapa() {
       opacity: 0.8,
       fillOpacity: 0.6
     });
-    
+
     marker.bindPopup(`
       <strong>${ocorrencia.RUBRICA || 'Desconhecido'}</strong><br>
       <strong>Local:</strong> ${ocorrencia.BAIRRO || 'N/A'}, ${ocorrencia.NOME_MUNICIPIO || 'N/A'}<br>
@@ -556,7 +556,7 @@ function atualizarMapa() {
       <strong>Latuutude:</strong> ${latStr || 'N/A'}<br>
       <strong>Longitude:</strong> ${lonStr || 'N/A'}
     `);
-    
+
     // Adiciona ao layer correto
     markerLayers[tipo]?.addLayer(marker);
   });
@@ -572,11 +572,11 @@ function aplicarFiltros() {
 function criarGraficoDiaSemana() {
   const ctx = document.getElementById('weekdayChart')?.getContext('2d');
   if (!ctx) return;
-  
-  const diasOrdem = ['domingo', 'segunda-feira', 'terça-feira', 'quarta-feira', 
-                     'quinta-feira', 'sexta-feira', 'sábado'];
+
+  const diasOrdem = ['domingo', 'segunda-feira', 'terça-feira', 'quarta-feira',
+    'quinta-feira', 'sexta-feira', 'sábado'];
   const valores = diasOrdem.map(d => dadosEstatisticas.porDiaSemana[d] || 0);
-  
+
   charts.weekday = new Chart(ctx, {
     type: 'radar',
     data: {
@@ -603,105 +603,105 @@ function criarGraficoDiaSemana() {
 function criarGraficoTipoVeiculo() {
   const ctx = document.getElementById('tipoVeiculoChart')?.getContext('2d');
   if (!ctx) return;
-  
-    const dadosPorTipoVeiculo = dadosEstatisticas.porTipoVeiculo;
 
-    // 1. DEFINIÇÃO DO AGRUPAMENTO
-    const mapaAgrupamento = {
-        'MOTOS/DUAS RODAS': ['MOTOCICLO', 'MOTONETA', 'CICLOMOTO', 'SIDE-CAR', 'TRICICLO'],
-        'AUTOMÓVEIS/UTILITÁRIOS': ['AUTOMOVEL', 'CAMIONETA', 'CAMINHONETE', 'UTILITÁRIO', 'MOTOR CASA'],
-        'CAMINHÕES/CARGAS': ['CAMINHÃO', 'CAMINHÃO TRATOR', 'CHASSI-PLATAFORMA'],
-        'TRANSPORTE COLETIVO': ['ONIBUS', 'MICRO-ONIBUS'],
-        'REBOQUES/IMPLEMENTOS': ['REBOQUE', 'SEMI-REBOQUE'],
-        'VEÍCULOS RURAIS/ESPECIAIS': ['TRATOR ESTEIRAS', 'TRATOR MISTO', 'TRATOR RODAS', 'QUADRICICLO'],
-        'NÃO MOTORIZADOS/ANTIGOS': ['BICICLETA', 'CARROÇA', 'CHARRETE', 'BONDE', 'CARRO DE MÃO'],
-        'NÃO CLASSIFICADOS': ['DESCONHECIDO', 'INEXIST.', 'INEXISTENTE', 'NÃO INFORMADO']
+  const dadosPorTipoVeiculo = dadosEstatisticas.porTipoVeiculo;
+
+  // 1. DEFINIÇÃO DO AGRUPAMENTO
+  const mapaAgrupamento = {
+    'MOTOS/DUAS RODAS': ['MOTOCICLO', 'MOTONETA', 'CICLOMOTO', 'SIDE-CAR', 'TRICICLO'],
+    'AUTOMÓVEIS/UTILITÁRIOS': ['AUTOMOVEL', 'CAMIONETA', 'CAMINHONETE', 'UTILITÁRIO', 'MOTOR CASA'],
+    'CAMINHÕES/CARGAS': ['CAMINHÃO', 'CAMINHÃO TRATOR', 'CHASSI-PLATAFORMA'],
+    'TRANSPORTE COLETIVO': ['ONIBUS', 'MICRO-ONIBUS'],
+    'REBOQUES/IMPLEMENTOS': ['REBOQUE', 'SEMI-REBOQUE'],
+    'VEÍCULOS RURAIS/ESPECIAIS': ['TRATOR ESTEIRAS', 'TRATOR MISTO', 'TRATOR RODAS', 'QUADRICICLO'],
+    'NÃO MOTORIZADOS/ANTIGOS': ['BICICLETA', 'CARROÇA', 'CHARRETE', 'BONDE', 'CARRO DE MÃO'],
+    'NÃO CLASSIFICADOS': ['DESCONHECIDO', 'INEXIST.', 'INEXISTENTE', 'NÃO INFORMADO']
+  };
+
+  const dadosAgrupados = {};
+
+  // Inicializa a estrutura para armazenar o TOTAL e os DETALHES
+  Object.keys(mapaAgrupamento).forEach(novaCategoria => {
+    dadosAgrupados[novaCategoria] = {
+      total: 0,
+      detalhes: {} // Aqui vamos armazenar as subcategorias e contagens
     };
+  });
 
-    const dadosAgrupados = {};
+  // 2. AGRUPAMENTO COM DETALHES
+  Object.entries(dadosPorTipoVeiculo).forEach(([tipo, contagem]) => {
+    for (const [novaCategoria, tiposOriginais] of Object.entries(mapaAgrupamento)) {
+      if (tiposOriginais.includes(tipo)) {
+        // Soma o total
+        dadosAgrupados[novaCategoria].total += contagem;
+        // Adiciona o detalhe
+        dadosAgrupados[novaCategoria].detalhes[tipo] = contagem;
+        return;
+      }
+    }
+  });
 
-    // Inicializa a estrutura para armazenar o TOTAL e os DETALHES
-    Object.keys(mapaAgrupamento).forEach(novaCategoria => {
-        dadosAgrupados[novaCategoria] = {
-            total: 0,
-            detalhes: {} // Aqui vamos armazenar as subcategorias e contagens
-        };
-    });
+  // 3. PREPARAÇÃO FINAL PARA O CHART.JS
+  // O array 'tipos' agora carrega a chave e o objeto com total/detalhes
+  const tipos = Object.entries(dadosAgrupados)
+    .sort((a, b) => b[1].total - a[1].total);
 
-    // 2. AGRUPAMENTO COM DETALHES
-    Object.entries(dadosPorTipoVeiculo).forEach(([tipo, contagem]) => {
-        for (const [novaCategoria, tiposOriginais] of Object.entries(mapaAgrupamento)) {
-            if (tiposOriginais.includes(tipo)) {
-                // Soma o total
-                dadosAgrupados[novaCategoria].total += contagem;
-                // Adiciona o detalhe
-                dadosAgrupados[novaCategoria].detalhes[tipo] = contagem;
-                return;
-            }
-        }
-    });
-
-    // 3. PREPARAÇÃO FINAL PARA O CHART.JS
-    // O array 'tipos' agora carrega a chave e o objeto com total/detalhes
-    const tipos = Object.entries(dadosAgrupados)
-        .sort((a, b) => b[1].total - a[1].total);
-
-    // 4. CRIAÇÃO DO GRÁFICO (O 'data' usa apenas o total)
+  // 4. CRIAÇÃO DO GRÁFICO (O 'data' usa apenas o total)
   charts.tipoVeiculo = new Chart(ctx, {
     type: 'doughnut',
     data: {
       labels: tipos.map(([k]) => k),
       datasets: [{
-                // A 'data' é o array de totais (ex: [395672, 754904, ...])
-                data: tipos.map(([, v]) => v.total), 
-                backgroundColor: [
-                    '#3b82f6', '#ef4444', '#10b981', '#f59e0b', 
-                    '#8b5cf6', '#06b6d4', '#6366f1', '#a8a29e'
-                ],
+        // A 'data' é o array de totais (ex: [395672, 754904, ...])
+        data: tipos.map(([, v]) => v.total),
+        backgroundColor: [
+          '#3b82f6', '#ef4444', '#10b981', '#f59e0b',
+          '#8b5cf6', '#06b6d4', '#6366f1', '#a8a29e'
+        ],
         borderWidth: 2,
         borderColor: '#1e293b'
       }]
     },
     options: {
       responsive: true,
-            plugins: { 
-                legend: { position: 'right', labels: { color: '#94a3b8' } },
-                
-                // 5. CONFIGURAÇÃO AVANÇADA DO TOOLTIP
-                tooltip: {
-                    callbacks: {
-                        // Título do Tooltip (Nome do Agrupamento e Total)
-                        title: function(context) {
-                            const index = context[0].dataIndex;
-                            const nomeCategoria = tipos[index][0];
-                            const totalFormatado = tipos[index][1].total.toLocaleString('pt-BR');
-                            
-                            // Exemplo: MOTOS/DUAS RODAS (Total: 395.672)
-                            return `${nomeCategoria} (Total: ${totalFormatado})`;
-                        },
-                        
-                        // Corpo do Tooltip (Detalhes das Subcategorias)
-                        label: function(context) {
-                            // Este callback é chamado para cada item da legenda (em doughnut é apenas 1)
-                            const index = context.dataIndex;
-                            const detalhes = tipos[index][1].detalhes;
-                            
-                            const linhasDetalhe = [];
-                            
-                            // Itera sobre os detalhes (MOTOCICLO, MOTONETA, etc.)
-                            Object.entries(detalhes)
-                                .sort((a, b) => b[1] - a[1]) // Opcional: ordena os detalhes do maior para o menor
-                                .forEach(([tipo, contagem]) => {
-                                    const valorFormatado = contagem.toLocaleString('pt-BR');
-                                    linhasDetalhe.push(`${tipo}: ${valorFormatado}`);
-                                });
-                            
-                            // Retorna o array de strings, cada uma será uma linha no tooltip
-                            return linhasDetalhe;
-                        }
-                    }
-                }
+      plugins: {
+        legend: { position: 'right', labels: { color: '#94a3b8' } },
+
+        // 5. CONFIGURAÇÃO AVANÇADA DO TOOLTIP
+        tooltip: {
+          callbacks: {
+            // Título do Tooltip (Nome do Agrupamento e Total)
+            title: function (context) {
+              const index = context[0].dataIndex;
+              const nomeCategoria = tipos[index][0];
+              const totalFormatado = tipos[index][1].total.toLocaleString('pt-BR');
+
+              // Exemplo: MOTOS/DUAS RODAS (Total: 395.672)
+              return `${nomeCategoria} (Total: ${totalFormatado})`;
+            },
+
+            // Corpo do Tooltip (Detalhes das Subcategorias)
+            label: function (context) {
+              // Este callback é chamado para cada item da legenda (em doughnut é apenas 1)
+              const index = context.dataIndex;
+              const detalhes = tipos[index][1].detalhes;
+
+              const linhasDetalhe = [];
+
+              // Itera sobre os detalhes (MOTOCICLO, MOTONETA, etc.)
+              Object.entries(detalhes)
+                .sort((a, b) => b[1] - a[1]) // Opcional: ordena os detalhes do maior para o menor
+                .forEach(([tipo, contagem]) => {
+                  const valorFormatado = contagem.toLocaleString('pt-BR');
+                  linhasDetalhe.push(`${tipo}: ${valorFormatado}`);
+                });
+
+              // Retorna o array de strings, cada uma será uma linha no tooltip
+              return linhasDetalhe;
             }
+          }
+        }
+      }
     }
   });
 }
@@ -709,130 +709,130 @@ function criarGraficoTipoVeiculo() {
  * Mapeia o nome da cor do veículo para um código de cor RGBA (com 0.7 de opacidade).
  */
 const mapearCorVeiculo = (nomeCor) => {
-    const cor = nomeCor.toUpperCase().trim();
+  const cor = nomeCor.toUpperCase().trim();
 
-    // Mapeamento que cobre todas as suas cores
-    switch (cor) {
-        case 'PRETA':
-            return 'rgba(0, 0, 0, 0.7)';
-        case 'BRANCO':
-        case 'BRANCA': // Cobrindo variações de gênero (mesmo que só tenha 'BRANCO')
-            //return 'rgba(255, 255, 255, 0.7)';
-            return 'rgba(242, 240, 239, 0.7)';
-        case 'PRATA':
-        case 'CINZA':
-            return 'rgba(150, 150, 150, 0.7)';
-        case 'VERMELHO':
-        case 'VERMELHA':
-        case 'GRENA': // Grena é um tom de vermelho/vinho
-            return 'rgba(220, 20, 60, 0.7)'; // Crimson
-        case 'AZUL':
-            return 'rgba(59, 130, 246, 0.7)';
-        case 'VERDE':
-            return 'rgba(16, 185, 129, 0.7)';
-        case 'AMARELO':
-            return 'rgba(255, 255, 0, 0.7)';
-        case 'LARANJA':
-            return 'rgba(245, 158, 11, 0.7)';
-        case 'MARROM':
-        case 'BEGE':
-            return 'rgba(139, 69, 19, 0.7)';
-        case 'ROXA':
-        case 'ROXO':
-        case 'ROSA': // Rosa como um tom mais claro de roxo/magenta
-            return 'rgba(192, 38, 211, 0.7)'; // Magenta/Roxo
-        case 'DOURADA':
-            return 'rgba(255, 215, 0, 0.7)'; // Gold
-        case 'FANTASIA':
-        case 'NÃO INFORMADO':
-        case 'DESCONHECIDO':
-        default:
-            // Cores de fallback para dados incompletos ou cores multi-tom
-            return 'rgba(168, 168, 168, 0.7)'; // Cinza neutro
-    }
+  // Mapeamento que cobre todas as suas cores
+  switch (cor) {
+    case 'PRETA':
+      return 'rgba(0, 0, 0, 0.7)';
+    case 'BRANCO':
+    case 'BRANCA': // Cobrindo variações de gênero (mesmo que só tenha 'BRANCO')
+      //return 'rgba(255, 255, 255, 0.7)';
+      return 'rgba(242, 240, 239, 0.7)';
+    case 'PRATA':
+    case 'CINZA':
+      return 'rgba(150, 150, 150, 0.7)';
+    case 'VERMELHO':
+    case 'VERMELHA':
+    case 'GRENA': // Grena é um tom de vermelho/vinho
+      return 'rgba(220, 20, 60, 0.7)'; // Crimson
+    case 'AZUL':
+      return 'rgba(59, 130, 246, 0.7)';
+    case 'VERDE':
+      return 'rgba(16, 185, 129, 0.7)';
+    case 'AMARELO':
+      return 'rgba(255, 255, 0, 0.7)';
+    case 'LARANJA':
+      return 'rgba(245, 158, 11, 0.7)';
+    case 'MARROM':
+    case 'BEGE':
+      return 'rgba(139, 69, 19, 0.7)';
+    case 'ROXA':
+    case 'ROXO':
+    case 'ROSA': // Rosa como um tom mais claro de roxo/magenta
+      return 'rgba(192, 38, 211, 0.7)'; // Magenta/Roxo
+    case 'DOURADA':
+      return 'rgba(255, 215, 0, 0.7)'; // Gold
+    case 'FANTASIA':
+    case 'NÃO INFORMADO':
+    case 'DESCONHECIDO':
+    default:
+      // Cores de fallback para dados incompletos ou cores multi-tom
+      return 'rgba(168, 168, 168, 0.7)'; // Cinza neutro
+  }
 };
 
 /** Mapeia cores de cada borda
  * Mapeia o nome da cor do veículo para um código de cor HEX para a borda.
  */
 const mapearCorBorda = (nomeCor) => {
-    const cor = nomeCor.toUpperCase().trim();
-    switch (cor) {
-        case 'PRETA': return '#000000';
-        case 'BRANCO':
-        case 'BRANCA': return '#000000ff'; // Cor clara para borda de fundo escuro
-        case 'PRATA':
-        case 'CINZA': return '#969696';
-        case 'VERMELHO':
-        case 'VERMELHA':
-        case 'GRENA': return '#dc143c'; // Crimson
-        case 'AZUL': return '#3b82f6';
-        case 'VERDE': return '#10b981';
-        case 'AMARELO': return '#FFFF00';
-        case 'LARANJA': return '#f59e0b';
-        case 'MARROM':
-        case 'BEGE': return '#8b4513';
-        case 'ROXA':
-        case 'ROXO':
-        case 'ROSA': return '#c026d3'; // Magenta
-        case 'DOURADA': return '#FFD700';
-        case 'FANTASIA':
-        case 'NÃO INFORMADO':
-        case 'DESCONHECIDO':
-        default: return '#555555';
-    }
+  const cor = nomeCor.toUpperCase().trim();
+  switch (cor) {
+    case 'PRETA': return '#000000';
+    case 'BRANCO':
+    case 'BRANCA': return '#000000ff'; // Cor clara para borda de fundo escuro
+    case 'PRATA':
+    case 'CINZA': return '#969696';
+    case 'VERMELHO':
+    case 'VERMELHA':
+    case 'GRENA': return '#dc143c'; // Crimson
+    case 'AZUL': return '#3b82f6';
+    case 'VERDE': return '#10b981';
+    case 'AMARELO': return '#FFFF00';
+    case 'LARANJA': return '#f59e0b';
+    case 'MARROM':
+    case 'BEGE': return '#8b4513';
+    case 'ROXA':
+    case 'ROXO':
+    case 'ROSA': return '#c026d3'; // Magenta
+    case 'DOURADA': return '#FFD700';
+    case 'FANTASIA':
+    case 'NÃO INFORMADO':
+    case 'DESCONHECIDO':
+    default: return '#555555';
+  }
 };
 // Cria grafico de cores dos veiculos, com as cores e as bordas mapeadas
 function criarGraficoCores() {
-    const ctx = document.getElementById('corChart')?.getContext('2d');
-    if (!ctx) return;
+  const ctx = document.getElementById('corChart')?.getContext('2d');
+  if (!ctx) return;
 
-    const cores = Object.entries(dadosEstatisticas.porCorVeiculo)
-        .sort((a, b) => b[1] - a[1])
-        .slice(0, 10);
-    
-    const nomesDasCores = cores.map(([k]) => k);
+  const cores = Object.entries(dadosEstatisticas.porCorVeiculo)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 10);
 
-    // Usa as novas funções de mapeamento:
-    const backgroundColors = nomesDasCores.map(mapearCorVeiculo);
-    const borderColors = nomesDasCores.map(mapearCorBorda);
-    
-    // Destrói o gráfico existente antes de criar um novo (se aplicável)
-    if (charts.cores) {
-        charts.cores.destroy();
-    }
+  const nomesDasCores = cores.map(([k]) => k);
 
-    charts.cores = new Chart(ctx, {
-        type: 'polarArea',
-        data: {
-            labels: nomesDasCores,
-            datasets: [{
-                label: 'Ocorrências',
-                data: cores.map(([, v]) => v),
-                backgroundColor: backgroundColors, 
-                borderColor: borderColors, 
-                borderWidth: 2
-            }]
-        },
-        options: {
-            responsive: true,
-            plugins: { 
-                legend: { position: 'right', labels: { color: '#94a3b8' } },
-                tooltip: {
-                    callbacks: {
-                         label: function(context) {
-                             const valor = context.parsed.r;
-                             const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                             const percentual = ((valor / total) * 100).toFixed(1);
-                             const valorFormatado = valor.toLocaleString('pt-BR');
-                             return `Ocorrências: ${valorFormatado} (${percentual}%)`;
-                         }
-                    }
-                }
-            },
-            scales: { r: { grid: { color: '#334155' } } }
+  // Usa as novas funções de mapeamento:
+  const backgroundColors = nomesDasCores.map(mapearCorVeiculo);
+  const borderColors = nomesDasCores.map(mapearCorBorda);
+
+  // Destrói o gráfico existente antes de criar um novo (se aplicável)
+  if (charts.cores) {
+    charts.cores.destroy();
+  }
+
+  charts.cores = new Chart(ctx, {
+    type: 'polarArea',
+    data: {
+      labels: nomesDasCores,
+      datasets: [{
+        label: 'Ocorrências',
+        data: cores.map(([, v]) => v),
+        backgroundColor: backgroundColors,
+        borderColor: borderColors,
+        borderWidth: 2
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { position: 'right', labels: { color: '#94a3b8' } },
+        tooltip: {
+          callbacks: {
+            label: function (context) {
+              const valor = context.parsed.r;
+              const total = context.dataset.data.reduce((a, b) => a + b, 0);
+              const percentual = ((valor / total) * 100).toFixed(1);
+              const valorFormatado = valor.toLocaleString('pt-BR');
+              return `Ocorrências: ${valorFormatado} (${percentual}%)`;
+            }
+          }
         }
-    });
+      },
+      scales: { r: { grid: { color: '#334155' } } }
+    }
+  });
 }
 
 /** Sanitizador
@@ -843,59 +843,59 @@ function criarGraficoCores() {
  * @returns {object} O objeto de dados limpo.
  */
 function limparEFiltrarDados(dados, chavesExcluir = []) {
-    const dadosLimpos = {};
+  const dadosLimpos = {};
 
-    for (const [chave, valor] of Object.entries(dados)) {
-        const chaveTratada = chave.trim().toUpperCase();
+  for (const [chave, valor] of Object.entries(dados)) {
+    const chaveTratada = chave.trim().toUpperCase();
 
-        // 1. FILTRAGEM DE CHAVES NUMÉRICAS INVÁLIDAS
-        // Verifica se a chave consiste apenas em dígitos.
-        // O regex /^\d+$/ verifica se a string inteira é composta de um ou mais dígitos.
-        if (chaveTratada.match(/^\d+$/)) {
-            // Ignora chaves que são apenas números (ex: "0", "1", "61")
-            continue;
-        }
-
-        // 2. FILTRAGEM POR LISTA DE EXCLUSÃO
-        if (chavesExcluir.includes(chaveTratada)) {
-            // Ignora chaves específicas (ex: "S.PAULO")
-            continue;
-        }
-        
-        // 3. FILTRAGEM DE CHAVES VAZIAS/MUITO CURTAS (Opcional, mas útil)
-        if (chaveTratada.length <= 2 && chaveTratada !== 'SE') {
-            // Ignora chaves como "" ou " " ou códigos muito curtos que não fazem sentido
-            // Mantém "SE" (que é um bairro válido)
-            continue;
-        }
-
-        // Se passar pelos filtros, adiciona aos dados limpos
-        dadosLimpos[chave] = valor;
+    // 1. FILTRAGEM DE CHAVES NUMÉRICAS INVÁLIDAS
+    // Verifica se a chave consiste apenas em dígitos.
+    // O regex /^\d+$/ verifica se a string inteira é composta de um ou mais dígitos.
+    if (chaveTratada.match(/^\d+$/)) {
+      // Ignora chaves que são apenas números (ex: "0", "1", "61")
+      continue;
     }
 
-    return dadosLimpos;
+    // 2. FILTRAGEM POR LISTA DE EXCLUSÃO
+    if (chavesExcluir.includes(chaveTratada)) {
+      // Ignora chaves específicas (ex: "S.PAULO")
+      continue;
+    }
+
+    // 3. FILTRAGEM DE CHAVES VAZIAS/MUITO CURTAS (Opcional, mas útil)
+    if (chaveTratada.length <= 2 && chaveTratada !== 'SE') {
+      // Ignora chaves como "" ou " " ou códigos muito curtos que não fazem sentido
+      // Mantém "SE" (que é um bairro válido)
+      continue;
+    }
+
+    // Se passar pelos filtros, adiciona aos dados limpos
+    dadosLimpos[chave] = valor;
+  }
+
+  return dadosLimpos;
 }
 
 function criarGraficoMunicipios() {
-    const ctx = document.getElementById('regionChart')?.getContext('2d');
-    if (!ctx) return;
+  const ctx = document.getElementById('regionChart')?.getContext('2d');
+  if (!ctx) return;
 
-    // A. DEFINIÇÃO DAS REGRAS DE LIMPEZA
-    const municipiosExcluir = ['S.PAULO', 'SAO PAULO', 'SÃO PAULO']; // Exclui variações comuns
-    
-    // B. LIMPEZA DOS DADOS
-    const dadosLimpos = limparEFiltrarDados(dadosEstatisticas.porMunicipio, municipiosExcluir);
+  // A. DEFINIÇÃO DAS REGRAS DE LIMPEZA
+  const municipiosExcluir = ['S.PAULO', 'SAO PAULO', 'SÃO PAULO']; // Exclui variações comuns
 
-    // C. PREPARAÇÃO DO TOP 10 (após a limpeza)
-    const municipios = Object.entries(dadosLimpos)
+  // B. LIMPEZA DOS DADOS
+  const dadosLimpos = limparEFiltrarDados(dadosEstatisticas.porMunicipio, municipiosExcluir);
+
+  // C. PREPARAÇÃO DO TOP 10 (após a limpeza)
+  const municipios = Object.entries(dadosLimpos)
     .sort((a, b) => b[1] - a[1])
-        .slice(0, 10); // Mantém o TOP 10
+    .slice(0, 10); // Mantém o TOP 10
 
-    // Destrói o gráfico existente antes de criar um novo (se aplicável)
-    if (charts.municipios) {
-        charts.municipios.destroy();
-    }
-  
+  // Destrói o gráfico existente antes de criar um novo (se aplicável)
+  if (charts.municipios) {
+    charts.municipios.destroy();
+  }
+
   charts.municipios = new Chart(ctx, {
     type: 'bar',
     data: {
@@ -909,83 +909,83 @@ function criarGraficoMunicipios() {
       }]
     },
     options: {
-            indexAxis: 'y', // Mudei para barra horizontal (melhor para nomes longos)
+      indexAxis: 'y', // Mudei para barra horizontal (melhor para nomes longos)
       responsive: true,
-            plugins: { 
-                legend: { display: false }, // Removi legenda se só tiver uma série
-                tooltip: { 
-                    callbacks: {
-                         label: function(context) {
-                             // Formata a contagem com separador de milhares
-                             const valorFormatado = context.parsed.x.toLocaleString('pt-BR');
-                             return `Ocorrências: ${valorFormatado}`;
-                         }
-                    }
-                }
-            },
-            scales: {
-                x: { 
-                    beginAtZero: true, 
-                    grid: { color: '#334155' }
-                },
-                y: { 
-                    grid: { display: false }
-                }
+      plugins: {
+        legend: { display: false }, // Removi legenda se só tiver uma série
+        tooltip: {
+          callbacks: {
+            label: function (context) {
+              // Formata a contagem com separador de milhares
+              const valorFormatado = context.parsed.x.toLocaleString('pt-BR');
+              return `Ocorrências: ${valorFormatado}`;
             }
+          }
         }
-    });
+      },
+      scales: {
+        x: {
+          beginAtZero: true,
+          grid: { color: '#334155' }
+        },
+        y: {
+          grid: { display: false }
+        }
+      }
+    }
+  });
 }
 
 function criarGraficoBairros() {
-    const ctx = document.getElementById('bairrosChart')?.getContext('2d');
-    if (!ctx) return;
+  const ctx = document.getElementById('bairrosChart')?.getContext('2d');
+  if (!ctx) return;
 
-    // A. LIMPEZA DOS DADOS (apenas para remover chaves numéricas)
-    // Não precisa de lista de exclusão específica, a lógica numérica resolve
-    const municipiosExcluir = ['CENTRO', 'DESCONHECIDO', 'RURAL', 'AREA RURAL']; // Exclui variações comuns
+  // A. LIMPEZA DOS DADOS (apenas para remover chaves numéricas)
+  // Não precisa de lista de exclusão específica, a lógica numérica resolve
+  const municipiosExcluir = ['CENTRO', 'DESCONHECIDO', 'RURAL', 'AREA RURAL']; // Exclui variações comuns
 
-    const dadosLimpos = limparEFiltrarDados(dadosEstatisticas.porBairro, municipiosExcluir);
+  const dadosLimpos = limparEFiltrarDados(dadosEstatisticas.porBairro, municipiosExcluir);
 
-    // B. PREPARAÇÃO DO TOP 10 (após a limpeza)
-    const bairros = Object.entries(dadosLimpos)
-        .sort((a, b) => b[1] - a[1])
-        .slice(0, 10); // Mantém o TOP 10
+  // B. PREPARAÇÃO DO TOP 10 (após a limpeza)
+  const bairros = Object.entries(dadosLimpos)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 10); // Mantém o TOP 10
 
-    // Destrói o gráfico existente antes de criar um novo (se aplicável)
-    if (charts.bairros) {
-        charts.bairros.destroy();
-    }
+  // Destrói o gráfico existente antes de criar um novo (se aplicável)
+  if (charts.bairros) {
+    charts.bairros.destroy();
+  }
 
-    charts.bairros = new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels: bairros.map(([k]) => k),
-            datasets: [{
-                label: 'Ocorrências',
-                data: bairros.map(([, v]) => v),
-                backgroundColor: 'rgba(245, 158, 11, 0.7)', // Nova cor
-                borderColor: '#f59e0b',
-                borderWidth: 2
-            }]
-        },
-        options: {
-            indexAxis: 'y', // Gráfico horizontal para melhor leitura
-            responsive: true,
-            plugins: { 
-                legend: { display: false },
-                tooltip: { 
-                    callbacks: {
-                         label: function(context) {
-                             const valorFormatado = context.parsed.x.toLocaleString('pt-BR');
-                             return `Ocorrências: ${valorFormatado}`;
-                         }
-                    }
-                }
-            },
-            scales: {
-                x: { beginAtZero: true, grid: { color: '#334155' } },
-                y: { grid: { display: false } }
+  charts.bairros = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: bairros.map(([k]) => k),
+      datasets: [{
+        label: 'Ocorrências',
+        data: bairros.map(([, v]) => v),
+        backgroundColor: 'rgba(245, 158, 11, 0.7)', // Nova cor
+        borderColor: '#f59e0b',
+        borderWidth: 2
+      }]
+    },
+    options: {
+      indexAxis: 'y', // Gráfico horizontal para melhor leitura
+      responsive: true,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: function (context) {
+              const valorFormatado = context.parsed.x.toLocaleString('pt-BR');
+              return `Ocorrências: ${valorFormatado}`;
             }
+          }
+        }
+      },
+      scales: {
+        x: { beginAtZero: true, grid: { color: '#334155' } },
+        y: { grid: { display: false } }
+      }
     }
   });
 }
