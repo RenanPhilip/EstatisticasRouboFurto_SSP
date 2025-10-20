@@ -745,13 +745,66 @@ function criarGraficoCores() {
     });
 }
 
+/** Sanitizador
+ * Limpa um objeto de estatísticas, removendo chaves que são apenas números,
+ * ignorando uma lista específica de chaves (como 'S.PAULO') e chaves vazias.
+ * @param {object} dados - O objeto de dados (ex: dadosEstatisticas.porMunicipio)
+ * @param {string[]} chavesExcluir - Lista de strings a serem removidas exatamente (ex: "S.PAULO").
+ * @returns {object} O objeto de dados limpo.
+ */
+function limparEFiltrarDados(dados, chavesExcluir = []) {
+    const dadosLimpos = {};
+
+    for (const [chave, valor] of Object.entries(dados)) {
+        const chaveTratada = chave.trim().toUpperCase();
+
+        // 1. FILTRAGEM DE CHAVES NUMÉRICAS INVÁLIDAS
+        // Verifica se a chave consiste apenas em dígitos.
+        // O regex /^\d+$/ verifica se a string inteira é composta de um ou mais dígitos.
+        if (chaveTratada.match(/^\d+$/)) {
+            // Ignora chaves que são apenas números (ex: "0", "1", "61")
+            continue;
+        }
+
+        // 2. FILTRAGEM POR LISTA DE EXCLUSÃO
+        if (chavesExcluir.includes(chaveTratada)) {
+            // Ignora chaves específicas (ex: "S.PAULO")
+            continue;
+        }
+        
+        // 3. FILTRAGEM DE CHAVES VAZIAS/MUITO CURTAS (Opcional, mas útil)
+        if (chaveTratada.length <= 2 && chaveTratada !== 'SE') {
+            // Ignora chaves como "" ou " " ou códigos muito curtos que não fazem sentido
+            // Mantém "SE" (que é um bairro válido)
+            continue;
+        }
+
+        // Se passar pelos filtros, adiciona aos dados limpos
+        dadosLimpos[chave] = valor;
+    }
+
+    return dadosLimpos;
+}
+
 function criarGraficoMunicipios() {
-  const ctx = document.getElementById('regionChart')?.getContext('2d');
-  if (!ctx) return;
-  
-  const municipios = Object.entries(dadosEstatisticas.porMunicipio)
+    const ctx = document.getElementById('regionChart')?.getContext('2d');
+    if (!ctx) return;
+
+    // A. DEFINIÇÃO DAS REGRAS DE LIMPEZA
+    const municipiosExcluir = ['S.PAULO', 'SAO PAULO', 'SÃO PAULO']; // Exclui variações comuns
+    
+    // B. LIMPEZA DOS DADOS
+    const dadosLimpos = limparEFiltrarDados(dadosEstatisticas.porMunicipio, municipiosExcluir);
+
+    // C. PREPARAÇÃO DO TOP 10 (após a limpeza)
+    const municipios = Object.entries(dadosLimpos)
     .sort((a, b) => b[1] - a[1])
-    .slice(0, 10);
+        .slice(0, 10); // Mantém o TOP 10
+
+    // Destrói o gráfico existente antes de criar um novo (se aplicável)
+    if (charts.municipios) {
+        charts.municipios.destroy();
+    }
   
   charts.municipios = new Chart(ctx, {
     type: 'bar',
@@ -766,9 +819,83 @@ function criarGraficoMunicipios() {
       }]
     },
     options: {
+            indexAxis: 'y', // Mudei para barra horizontal (melhor para nomes longos)
       responsive: true,
-      plugins: { legend: { position: 'right', labels: { color: '#94a3b8' } } },
-      scales: { r: { grid: { color: '#334155' } } }
+            plugins: { 
+                legend: { display: false }, // Removi legenda se só tiver uma série
+                tooltip: { 
+                    callbacks: {
+                         label: function(context) {
+                             // Formata a contagem com separador de milhares
+                             const valorFormatado = context.parsed.x.toLocaleString('pt-BR');
+                             return `Ocorrências: ${valorFormatado}`;
+                         }
+                    }
+                }
+            },
+            scales: {
+                x: { 
+                    beginAtZero: true, 
+                    grid: { color: '#334155' }
+                },
+                y: { 
+                    grid: { display: false }
+                }
+            }
+        }
+    });
+}
+
+function criarGraficoBairros() {
+    const ctx = document.getElementById('bairrosChart')?.getContext('2d');
+    if (!ctx) return;
+
+    // A. LIMPEZA DOS DADOS (apenas para remover chaves numéricas)
+    // Não precisa de lista de exclusão específica, a lógica numérica resolve
+    const municipiosExcluir = ['CENTRO', 'DESCONHECIDO', 'RURAL', 'AREA RURAL']; // Exclui variações comuns
+
+    const dadosLimpos = limparEFiltrarDados(dadosEstatisticas.porBairro, municipiosExcluir);
+
+    // B. PREPARAÇÃO DO TOP 10 (após a limpeza)
+    const bairros = Object.entries(dadosLimpos)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 10); // Mantém o TOP 10
+
+    // Destrói o gráfico existente antes de criar um novo (se aplicável)
+    if (charts.bairros) {
+        charts.bairros.destroy();
+    }
+
+    charts.bairros = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: bairros.map(([k]) => k),
+            datasets: [{
+                label: 'Ocorrências',
+                data: bairros.map(([, v]) => v),
+                backgroundColor: 'rgba(245, 158, 11, 0.7)', // Nova cor
+                borderColor: '#f59e0b',
+                borderWidth: 2
+            }]
+        },
+        options: {
+            indexAxis: 'y', // Gráfico horizontal para melhor leitura
+            responsive: true,
+            plugins: { 
+                legend: { display: false },
+                tooltip: { 
+                    callbacks: {
+                         label: function(context) {
+                             const valorFormatado = context.parsed.x.toLocaleString('pt-BR');
+                             return `Ocorrências: ${valorFormatado}`;
+                         }
+                    }
+                }
+            },
+            scales: {
+                x: { beginAtZero: true, grid: { color: '#334155' } },
+                y: { grid: { display: false } }
+            }
     }
   });
 }
