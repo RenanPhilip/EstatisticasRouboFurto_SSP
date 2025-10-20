@@ -509,29 +509,109 @@ function criarGraficoDiaSemana() {
     }
   });
 }
-
+// Grafico por tipo de veiculo agrupado separados no tooltip (hover)
 function criarGraficoTipoVeiculo() {
   const ctx = document.getElementById('tipoVeiculoChart')?.getContext('2d');
   if (!ctx) return;
   
-  const tipos = Object.entries(dadosEstatisticas.porTipoVeiculo)
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 8);
-  
+    const dadosPorTipoVeiculo = dadosEstatisticas.porTipoVeiculo;
+
+    // 1. DEFINIÇÃO DO AGRUPAMENTO
+    const mapaAgrupamento = {
+        'MOTOS/DUAS RODAS': ['MOTOCICLO', 'MOTONETA', 'CICLOMOTO', 'SIDE-CAR', 'TRICICLO'],
+        'AUTOMÓVEIS/UTILITÁRIOS': ['AUTOMOVEL', 'CAMIONETA', 'CAMINHONETE', 'UTILITÁRIO', 'MOTOR CASA'],
+        'CAMINHÕES/CARGAS': ['CAMINHÃO', 'CAMINHÃO TRATOR', 'CHASSI-PLATAFORMA'],
+        'TRANSPORTE COLETIVO': ['ONIBUS', 'MICRO-ONIBUS'],
+        'REBOQUES/IMPLEMENTOS': ['REBOQUE', 'SEMI-REBOQUE'],
+        'VEÍCULOS RURAIS/ESPECIAIS': ['TRATOR ESTEIRAS', 'TRATOR MISTO', 'TRATOR RODAS', 'QUADRICICLO'],
+        'NÃO MOTORIZADOS/ANTIGOS': ['BICICLETA', 'CARROÇA', 'CHARRETE', 'BONDE', 'CARRO DE MÃO'],
+        'NÃO CLASSIFICADOS': ['DESCONHECIDO', 'INEXIST.', 'INEXISTENTE', 'NÃO INFORMADO']
+    };
+
+    const dadosAgrupados = {};
+
+    // Inicializa a estrutura para armazenar o TOTAL e os DETALHES
+    Object.keys(mapaAgrupamento).forEach(novaCategoria => {
+        dadosAgrupados[novaCategoria] = {
+            total: 0,
+            detalhes: {} // Aqui vamos armazenar as subcategorias e contagens
+        };
+    });
+
+    // 2. AGRUPAMENTO COM DETALHES
+    Object.entries(dadosPorTipoVeiculo).forEach(([tipo, contagem]) => {
+        for (const [novaCategoria, tiposOriginais] of Object.entries(mapaAgrupamento)) {
+            if (tiposOriginais.includes(tipo)) {
+                // Soma o total
+                dadosAgrupados[novaCategoria].total += contagem;
+                // Adiciona o detalhe
+                dadosAgrupados[novaCategoria].detalhes[tipo] = contagem;
+                return;
+            }
+        }
+    });
+
+    // 3. PREPARAÇÃO FINAL PARA O CHART.JS
+    // O array 'tipos' agora carrega a chave e o objeto com total/detalhes
+    const tipos = Object.entries(dadosAgrupados)
+        .sort((a, b) => b[1].total - a[1].total);
+
+    // 4. CRIAÇÃO DO GRÁFICO (O 'data' usa apenas o total)
   charts.tipoVeiculo = new Chart(ctx, {
     type: 'doughnut',
     data: {
       labels: tipos.map(([k]) => k),
       datasets: [{
-        data: tipos.map(([, v]) => v),
-        backgroundColor: ['#3b82f6', '#8b5cf6', '#ec4899', '#f59e0b', '#10b981', '#06b6d4', '#6366f1', '#84cc16'],
+                // A 'data' é o array de totais (ex: [395672, 754904, ...])
+                data: tipos.map(([, v]) => v.total), 
+                backgroundColor: [
+                    '#3b82f6', '#ef4444', '#10b981', '#f59e0b', 
+                    '#8b5cf6', '#06b6d4', '#6366f1', '#a8a29e'
+                ],
         borderWidth: 2,
         borderColor: '#1e293b'
       }]
     },
     options: {
       responsive: true,
-      plugins: { legend: { position: 'right', labels: { color: '#94a3b8' } } }
+            plugins: { 
+                legend: { position: 'right', labels: { color: '#94a3b8' } },
+                
+                // 5. CONFIGURAÇÃO AVANÇADA DO TOOLTIP
+                tooltip: {
+                    callbacks: {
+                        // Título do Tooltip (Nome do Agrupamento e Total)
+                        title: function(context) {
+                            const index = context[0].dataIndex;
+                            const nomeCategoria = tipos[index][0];
+                            const totalFormatado = tipos[index][1].total.toLocaleString('pt-BR');
+                            
+                            // Exemplo: MOTOS/DUAS RODAS (Total: 395.672)
+                            return `${nomeCategoria} (Total: ${totalFormatado})`;
+                        },
+                        
+                        // Corpo do Tooltip (Detalhes das Subcategorias)
+                        label: function(context) {
+                            // Este callback é chamado para cada item da legenda (em doughnut é apenas 1)
+                            const index = context.dataIndex;
+                            const detalhes = tipos[index][1].detalhes;
+                            
+                            const linhasDetalhe = [];
+                            
+                            // Itera sobre os detalhes (MOTOCICLO, MOTONETA, etc.)
+                            Object.entries(detalhes)
+                                .sort((a, b) => b[1] - a[1]) // Opcional: ordena os detalhes do maior para o menor
+                                .forEach(([tipo, contagem]) => {
+                                    const valorFormatado = contagem.toLocaleString('pt-BR');
+                                    linhasDetalhe.push(`${tipo}: ${valorFormatado}`);
+                                });
+                            
+                            // Retorna o array de strings, cada uma será uma linha no tooltip
+                            return linhasDetalhe;
+                        }
+                    }
+                }
+            }
     }
   });
 }
