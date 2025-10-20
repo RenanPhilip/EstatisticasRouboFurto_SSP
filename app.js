@@ -72,6 +72,7 @@ async function carregarDados() {
   }
 }
 
+// melhorar isso (FILTROS)
 function popularFiltros() {
   const anos = Object.keys(dadosEstatisticas.porAno).sort((a, b) => b - a);
   const yearFilter = document.getElementById('yearFilter');
@@ -136,6 +137,7 @@ function atualizarCards() {
   document.getElementById('totalFlagrantes').textContent = `${percFlagrantes}%`;
 }
 
+// Cria todos os graficos
 function criarTodosGraficos() {
   criarGraficoTimeline();
   criarGraficoHoras();
@@ -144,6 +146,7 @@ function criarTodosGraficos() {
   criarGraficoTipoVeiculo();
   criarGraficoCores();
   criarGraficoMunicipios();
+  criarGraficoBairros();
   criarGraficoPeriodo();
 }
 
@@ -475,8 +478,6 @@ function aplicarFiltros() {
   // re-agregação, vamos focar no mapa e no layout.
   console.log('Filtros de seleção alterados. Para re-filtrar gráficos, a lógica de re-agregação precisa ser implementada.');
 }
-
-document.addEventListener('DOMContentLoaded', carregarDados);
 
 function criarGraficoDiaSemana() {
   const ctx = document.getElementById('weekdayChart')?.getContext('2d');
