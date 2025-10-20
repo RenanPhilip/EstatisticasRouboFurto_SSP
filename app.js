@@ -323,15 +323,71 @@ function criarGraficoMarcas() {
   const ctx = document.getElementById('marcasChart')?.getContext('2d');
   if (!ctx) return;
   
-  const top10 = dadosEstatisticas.top10MarcasMaisRoubadas || [];
-  
+    const dadosPorMarcaModelo = dadosEstatisticas.porMarcaVeiculo;
+
+    // 1. AGRUPAMENTO POR MARCA E COLETA DE DETALHES DO MODELO
+    const dadosAgrupadosPorMarca = {};
+    const marcaRegex = /^([A-Z0-9\/]+)/; // Regex para pegar a marca (ex: HONDA, FIAT, VW, I/VW)
+
+    Object.entries(dadosPorMarcaModelo).forEach(([marcaModelo, contagem]) => {
+        // Separa Marca do Modelo. Se não tiver barra, usa a string toda como marca.
+        const partes = marcaModelo.split('/');
+        let marca, modelo;
+
+        if (partes.length >= 2) {
+            // Assume que o primeiro elemento é a marca e o restante é o modelo (pode ter barra no modelo)
+            marca = partes[0].trim() || 'DESCONHECIDO';
+            modelo = partes.slice(1).join('/').trim();
+        } else {
+            // Se não tem barra, a string inteira é tratada como marca (ou tipo especial)
+            marca = marcaModelo.trim();
+            modelo = 'Diversos/Não Detalhado'; 
+        }
+
+        // Inicializa a estrutura da marca, se for a primeira vez
+        if (!dadosAgrupadosPorMarca[marca]) {
+            dadosAgrupadosPorMarca[marca] = {
+                total: 0,
+                modelos: {} // Armazenará os modelos e suas contagens
+            };
+        }
+
+        // Soma o total da marca e armazena o detalhe do modelo
+        dadosAgrupadosPorMarca[marca].total += contagem;
+        dadosAgrupadosPorMarca[marca].modelos[modelo] = contagem;
+    });
+
+    // 2. FILTRAGEM E PREPARAÇÃO DO TOP N
+    const topN = 10; // Defina quantos itens você quer no gráfico
+    
+    // Converte para array, ordena pelo total da marca e pega o TOP N
+    const topMarcas = Object.entries(dadosAgrupadosPorMarca)
+        .sort((a, b) => b[1].total - a[1].total)
+        .slice(0, topN);
+
+    // 3. PREPARAÇÃO DO TOOLTIP (Para facilitar o acesso rápido no callback)
+    const dadosTooltip = topMarcas.map(([marca, data]) => ({
+        marca: marca,
+        total: data.total,
+        // Converte os modelos em um array ordenado para o tooltip
+        detalhes: Object.entries(data.modelos)
+            .sort((a, b) => b[1] - a[1]) // Ordena modelos do mais roubado para o menos
+            .slice(0, 5) // Opcional: Mostra apenas os 5 modelos mais roubados no tooltip
+    }));
+    
+    // Destrói o gráfico existente antes de criar um novo (se aplicável)
+    if (charts.marcas) {
+        charts.marcas.destroy();
+    }
+
+    // 4. CRIAÇÃO DO GRÁFICO DE BARRAS
   charts.marcas = new Chart(ctx, {
     type: 'bar',
     data: {
-      labels: top10.map(m => m.marca || 'Desconhecido'),
+            labels: topMarcas.map(([marca]) => marca || 'Desconhecido'),
       datasets: [{
-        label: 'Ocorrências',
-        data: top10.map(m => m.count || 0),
+                label: 'Ocorrências por Marca',
+                data: topMarcas.map(([, data]) => data.total || 0),
         backgroundColor: 'rgba(236, 72, 153, 0.7)',
         borderColor: '#ec4899',
         borderWidth: 2
@@ -340,7 +396,41 @@ function criarGraficoMarcas() {
     options: {
       indexAxis: 'y',
       responsive: true,
-      plugins: { legend: { display: false } },
+            plugins: { 
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        // Título: Marca e Total
+                        title: function(context) {
+                            const index = context[0].dataIndex;
+                            const { marca, total } = dadosTooltip[index];
+                            const totalFormatado = total.toLocaleString('pt-BR');
+                            return `${marca} (Total: ${totalFormatado})`;
+                        },
+                        // Corpo: Lista os Modelos mais Roubados
+                        label: function(context) {
+                            const index = context.dataIndex;
+                            const { detalhes } = dadosTooltip[index];
+                            
+                            const linhasDetalhe = ['Modelos mais Frequentes:']; // Primeira linha de subtítulo
+                            
+                            // Adiciona as linhas detalhadas dos modelos
+                            detalhes.forEach(([modelo, contagem]) => {
+                                const valorFormatado = contagem.toLocaleString('pt-BR');
+                                linhasDetalhe.push(`  - ${modelo}: ${valorFormatado}`);
+                            });
+                            
+                            // Se tiver mais de 5 modelos, adiciona uma linha indicando isso
+                            if (Object.keys(dadosAgrupadosPorMarca[dadosTooltip[index].marca].modelos).length > 5) {
+                                linhasDetalhe.push(`  + Mais ${Object.keys(dadosAgrupadosPorMarca[dadosTooltip[index].marca].modelos).length - 5} modelos...`);
+                            }
+                            
+                            // Retorna o array de strings para o tooltip
+                            return linhasDetalhe;
+                        }
+                    }
+                }
+            },
       scales: {
         x: { beginAtZero: true, grid: { color: '#334155' } },
         y: { grid: { display: false } }
