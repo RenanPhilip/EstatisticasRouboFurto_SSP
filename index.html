@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -12,6 +13,7 @@
 
 <body>
     <div class="container modern-layout">
+        <!-- Cabeçalho -->
         <header>
             <h1>📊 Estatísticas de Segurança - SP</h1>
             <p class="subtitle">Roubos e Furtos de Veículos no Estado de São Paulo</p>
@@ -19,7 +21,7 @@
                 Carregando dados...
             </div>
         </header>
-
+        <!-- Filtros -->
         <div class="filters-container">
             <h2>Filtros</h2>
             <div class="filters-grid">
@@ -85,49 +87,48 @@
             <h2 class="chart-title">Evolução Mensal</h2>
             <canvas id="monthlyChart"></canvas>
         </div>
-
         <!-- Categorias dos veiculos -->
         <div class="chart-container">
             <h2 class="chart-title">Tipos de Veículo</h2>
             <canvas id="tipoVeiculoChart"></canvas>
         </div>
-
         <!-- Marcas e modelos mais roubados  -->
         <div class="chart-container">
             <h2 class="chart-title">Marcas e Modelos Mais Roubadas</h2>
             <canvas id="marcasChart"></canvas>
         </div>
-
+        <!-- Cores veiculos -->
         <div class="chart-container">
             <h2 class="chart-title">Cores dos Veículos</h2>
             <canvas id="corChart"></canvas>
         </div>
-
-
+        <!-- Ocorrências por dia da semana -->
         <div class="chart-container">
             <h2 class="chart-title">Ocorrências por Dia da Semana</h2>
             <canvas id="weekdayChart"></canvas>
         </div>
-
+        <!-- Ocorrências por período -->
         <div class="chart-container">
             <h2 class="chart-title">Ocorrências por Período</h2>
             <canvas id="periodoChart"></canvas>
         </div>
-
+        <!-- Ocorrências por hora -->
         <div class="chart-container">
             <h2 class="chart-title">Ocorrências por Hora</h2>
             <canvas id="hourChart"></canvas>
         </div>
-
+        <!-- Top 10 Municípios -->
         <div class="chart-container">
             <h2 class="chart-title" title="Ignorando 'São Paulo'">Top 10 Municípios</h2>
             <canvas id="regionChart"></canvas>
         </div>
+        <!-- Top 10 Bairros -->
         <div class="chart-container">
-            <h2 class="chart-title" title="Ignorando 'CENTRO', 'DESCONHECIDO', 'RURAL', 'AREA RURAL'">Top 10 Bairros</h2>
+            <h2 class="chart-title" title="Ignorando 'CENTRO', 'DESCONHECIDO', 'RURAL', 'AREA RURAL'">Top 10 Bairros
+            </h2>
             <canvas id="bairrosChart"></canvas>
         </div>
-
+        <!-- Mapa de Ocorrências -->
         <div class="chart-container map-container">
             <h2 class="chart-title">Mapa de Ocorrências Recentes</h2>
             <div class="map-controls">
@@ -150,4 +151,18 @@
 
     <script src="app.js"></script>
 </body>
+<footer>
+    <div id="footer-main-content" class="footer-main-content">
+        <div id="originData" class="originData">
+            <h3>
+                Atualização mensal com os dados oficiais disponibilidazos pelo estado de São Paulo
+            </h3>
+            <a href="https://www.ssp.sp.gov.br/estatistica/consultas" id="sspLink" class="ssplink">
+                Dados oficiais SSP
+            </a>
+        </div>
+
+    </div>
+</footer>
+    <script src="../RenanPhilip/assets/javascript/call-navbar.js" type="module"></script>
 </html>
