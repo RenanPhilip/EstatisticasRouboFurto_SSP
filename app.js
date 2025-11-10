@@ -4,6 +4,7 @@ let dadosEstatisticas = null;
 let dadosMapa = null;
 let mapInstance = null;
 let charts = {};
+let todosDados = [];
 
 Chart.defaults.color = '#94a3b8';
 Chart.defaults.borderColor = '#334155';
@@ -255,7 +256,7 @@ filtrarDados.addEventListener('click', async () => {
   // Aqui você pode usar os dados carregados:
   console.log('✅ Dados prontos para uso:', dados);
 
-  const todosDados = dados.flatMap(f => f.data);
+  todosDados = dados.flatMap(f => f.data);
   console.log('Todos os dados-> ',todosDados);
 
 });
