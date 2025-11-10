@@ -143,6 +143,7 @@ function popularFiltros() {
    !################################################################################################################
    ! A função abaixo esta funcionando bem e por incrivel que pareça nao esta demorando muito para carregar os jsons
    ? Utilizar esses dados carregados para popular a página, verificar como funcionará
+   * Verificar se os dados estão disponiveis para usar fora da função
    !################################################################################################################
   */
   // const filtrarDados = document.getElementById('filterButton');
@@ -262,6 +263,7 @@ filtrarDados.addEventListener('click', async () => {
  !################################################################################################################
  ! A função acima esta funcionando bem e por incrivel que pareça nao esta demorando muito para carregar os jsons
  ? Utilizar esses dados carregados para popular a página, verificar como funcionará
+ * Verificar se os dados estão disponiveis para usar fora da função
  !################################################################################################################
 */
 
