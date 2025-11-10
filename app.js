@@ -74,8 +74,6 @@ async function carregarDados() {
 
 // melhorar isso (FILTROS)
 function popularFiltros() {
-
-  // Popular Filtros de inicio Ano
   const anos = Object.keys(dadosEstatisticas.porAno).sort((a, b) => b - a);
   const yearFilter = document.getElementById('yearFilter');
   anos.forEach(ano => {
@@ -85,187 +83,46 @@ function popularFiltros() {
     yearFilter.appendChild(option);
   });
 
-  // Meses para popular
-  const meses = [
-    'Jan', 'Fev', 'Mar',
-    'Abr', 'Mai', 'Jun',
-    'Jul', 'Ago', 'Set',
-    'Out', 'Nov', 'Dez'
-  ];
-
-  // Popular filtros de inicio Mes
-  const monthFilter = document.getElementById('monthFilter');
-  meses.forEach(mes => {
+  const municipios = Object.entries(dadosEstatisticas.porMunicipio)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 20);
+  const municipioFilter = document.getElementById('municipioFilter');
+  municipios.forEach(([municipio]) => {
     const option = document.createElement('option');
-    option.value = mes;
-    option.textContent = mes;
-    monthFilter.appendChild(option);
-  })
-
-  // Popular Filtros de fim Ano
-  const endYearFilter = document.getElementById('end-yearFilter');
-  anos.forEach(ano => {
-    const option = document.createElement('option');
-    option.value = ano;
-    option.textContent = ano;
-    endYearFilter.appendChild(option);
+    option.value = municipio;
+    option.textContent = municipio;
+    municipioFilter.appendChild(option);
   });
 
-  // Popular Filtros de Fim Mes
-  const endMonthFilter = document.getElementById('end-monthFilter');
-  meses.forEach(mes => {
+  const rubricas = Object.keys(dadosEstatisticas.porRubrica);
+  const rubricaFilter = document.getElementById('rubricaFilter');
+  rubricas.forEach(rubrica => {
     const option = document.createElement('option');
-    option.value = mes;
-    option.textContent = mes;
-    endMonthFilter.appendChild(option);
-  })
+    option.value = rubrica;
+    option.textContent = rubrica;
+    rubricaFilter.appendChild(option);
+  });
 
-  // Transforma o que esta no filtro como nome do arquivo
-  function getAnosQuarter(ano, mes) {
-    if (!ano || !mes) throw new Error('Parâmetros "ano" e "mes" são obrigatórios.');
+  // Novos filtros
+  const tiposVeiculo = Object.keys(dadosEstatisticas.porTipoVeiculo);
+  const tipoVeiculoFilter = document.getElementById('tipoVeiculoFilter');
+  tiposVeiculo.forEach(tipo => {
+    const option = document.createElement('option');
+    option.value = tipo;
+    option.textContent = tipo;
+    tipoVeiculoFilter.appendChild(option);
+  });
 
-    const month = mes.trim().toLowerCase().slice(0, 3); // normaliza e aceita nomes maiores (ex: "janeiro")
-
-    const quarterMap = {
-      jan: 'Q1', fev: 'Q1', mar: 'Q1',
-      abr: 'Q2', mai: 'Q2', jun: 'Q2',
-      jul: 'Q3', ago: 'Q3', set: 'Q3',
-      out: 'Q4', nov: 'Q4', dez: 'Q4'
-    };
-
-    const quarter = quarterMap[month];
-
-    if (!quarter) throw new Error(`Mês inválido: "${mes}"`);
-
-    return `${ano}_${quarter}.json`;
-  }
-  /*
-   !################################################################################################################
-   ! A função abaixo esta funcionando bem e por incrivel que pareça nao esta demorando muito para carregar os jsons
-   ? Utilizar esses dados carregados para popular a página, verificar como funcionará
-   !################################################################################################################
-  */
-  // const filtrarDados = document.getElementById('filterButton');
-  // filtrarDados.addEventListener('click', async () => {
-  //   const inicioAno = document.getElementById('yearFilter').value;
-  //   const inicioMes = document.getElementById('monthFilter').value;
-  //   const fimAno = document.getElementById('end-yearFilter').value;
-  //   const fimMes = document.getElementById('end-monthFilter').value;
-
-  //   // console.log(`Filtro:
-  //   //   De : ${inicioAno}, ${inicioMes},
-  //   //   Até: ${fimAno}, ${fimMes}`
-  //   // );
-
-  //   buscarAnosQuarter = [
-  //     getAnosQuarter(inicioAno, inicioMes),
-  //     getAnosQuarter(fimAno, fimMes)
-  //   ].sort();
-
-  //   console.log(buscarAnosQuarter);
-
-    
-  // });
-  // Função auxiliar para transformar ano+mês em nome de arquivo
-function getAnosQuarter(ano, mes) {
-  if (!ano || !mes) throw new Error('Parâmetros "ano" e "mes" são obrigatórios.');
-
-  const month = mes.trim().toLowerCase().slice(0, 3);
-  const quarterMap = {
-    jan: 'Q1', fev: 'Q1', mar: 'Q1',
-    abr: 'Q2', mai: 'Q2', jun: 'Q2',
-    jul: 'Q3', ago: 'Q3', set: 'Q3',
-    out: 'Q4', nov: 'Q4', dez: 'Q4'
-  };
-
-  const quarter = quarterMap[month];
-  if (!quarter) throw new Error(`Mês inválido: "${mes}"`);
-
-  return `${ano}_${quarter}.json`;
+  const coresVeiculo = Object.keys(dadosEstatisticas.porCorVeiculo);
+  const corVeiculoFilter = document.getElementById('corVeiculoFilter');
+  coresVeiculo.forEach(cor => {
+    const option = document.createElement('option');
+    option.value = cor;
+    option.textContent = cor;
+    corVeiculoFilter.appendChild(option);
+  });
 }
 
-// Função principal para carregar os arquivos no intervalo
-async function getFiles(iniA, iniM, fimA, fimM) {
-  iniM = +iniM.toLowerCase().replace('q', '');
-  fimM = +fimM.toLowerCase().replace('q', '');
-
-  const basePath = './data/';
-  const files = [];
-
-  if (iniA === fimA) {
-    for (let q = iniM; q <= fimM; q++) {
-      files.push(`${iniA}_Q${q}.json`);
-    }
-  } else {
-    for (let year = iniA; year <= fimA; year++) {
-      if (year === iniA) {
-        for (let q = iniM; q <= 4; q++) files.push(`${year}_Q${q}.json`);
-      } else if (year === fimA) {
-        for (let q = 1; q <= fimM; q++) files.push(`${year}_Q${q}.json`);
-      } else {
-        for (let q = 1; q <= 4; q++) files.push(`${year}_Q${q}.json`);
-      }
-    }
-  }
-
-  // Carrega os arquivos existentes
-  const loadedData = [];
-  for (const file of files) {
-    const url = `${basePath}${file}`;
-    try {
-      const response = await fetch(url);
-      if (!response.ok) throw new Error('Arquivo não encontrado');
-      const data = await response.json();
-      console.log(`✅ Carregado: ${file}`);
-      loadedData.push({ file, data });
-    } catch (err) {
-      console.warn(`⚠️ Ignorado: ${file} (${err.message})`);
-    }
-  }
-
-  console.log('Arquivos carregados:', loadedData.map(f => f.file));
-  return loadedData;
-}
-
-// --- EVENTO DO BOTÃO ---
-const filtrarDados = document.getElementById('filterButton');
-
-filtrarDados.addEventListener('click', async () => {
-  const inicioAno = document.getElementById('yearFilter').value;
-  const inicioMes = document.getElementById('monthFilter').value;
-  const fimAno = document.getElementById('end-yearFilter').value;
-  const fimMes = document.getElementById('end-monthFilter').value;
-
-  // Gera nomes dos arquivos de início e fim
-  const buscarAnosQuarter = [
-    getAnosQuarter(inicioAno, inicioMes),
-    getAnosQuarter(fimAno, fimMes)
-  ].sort();
-
-  console.log('Intervalo selecionado:', buscarAnosQuarter);
-
-  // Extrai o formato de ano e trimestre (ex: "2025_Q1" → 2025, Q1)
-  const [iniA, iniM] = buscarAnosQuarter[0].replace('.json', '').split('_');
-  const [fimA, fimM] = buscarAnosQuarter[1].replace('.json', '').split('_');
-
-  // Chama a função de busca e espera o carregamento
-  const dados = await getFiles(+iniA, iniM, +fimA, fimM);
-
-  // Aqui você pode usar os dados carregados:
-  console.log('✅ Dados prontos para uso:', dados);
-
-  const todosDados = dados.flatMap(f => f.data);
-  console.log('Todos os dados-> ',todosDados);
-
-});
-/*
- !################################################################################################################
- ! A função acima esta funcionando bem e por incrivel que pareça nao esta demorando muito para carregar os jsons
- ? Utilizar esses dados carregados para popular a página, verificar como funcionará
- !################################################################################################################
-*/
-
-}
 // Cards de cabeçalho
 function atualizarCards() {
   const totalGeral = dadosEstatisticas.totalRegistros || 'N/A';
