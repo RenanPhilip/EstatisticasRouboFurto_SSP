@@ -24,44 +24,42 @@
         <!-- Filtros -->
         <div class="filters-container">
             <h2>Filtros</h2>
-            <div class="filters-grid">
-                <label class="filter-item">
-                    <span>Ano:</span>
-                    <select id="yearFilter">
-                        <option value="">Todos</option>
-                    </select>
-                </label>
-                <label class="filter-item">
-                    <span>Município:</span>
-                    <select id="municipioFilter">
-                        <option value="">Todos</option>
-                    </select>
-                </label>
-                <label class="filter-item">
-                    <span>Rubrica:</span>
-                    <select id="rubricaFilter">
-                        <option value="">Todas</option>
-                    </select>
-                </label>
-                <label class="filter-item">
-                    <span>Período:</span>
-                    <select id="periodoFilter">
-                        <option value="">Todos</option>
-                    </select>
-                </label>
-                <label class="filter-item">
-                    <span>Tipo de Veículo:</span>
-                    <select id="tipoVeiculoFilter">
-                        <option value="">Todos</option>
-                    </select>
-                </label>
-                <label class="filter-item">
-                    <span>Cor do Veículo:</span>
-                    <select id="corVeiculoFilter">
-                        <option value="">Todas</option>
-                    </select>
-                </label>
+            <div id="inicioFiltro" class="inicioFiltro">
+                <!-- <h4>De:</h4> -->
+                <div class="filters-grid">
+                    <label class="filter-item">
+                        <span>De Ano:</span>
+                        <select id="yearFilter">
+                            <!-- <option value="">Todos</option> -->
+                        </select>
+                    </label>
+                    <label class="filter-item">
+                        <span>Mês:</span>
+                        <select id="monthFilter">
+                            <!-- <option value="">Todos</option> -->
+                        </select>
+                    </label>
+                </div>
             </div>
+            <div id="fimFiltro" class="fimFiltro">
+                <!-- <h4>Até :</h4> -->
+                <div class="filters-grid">
+                    <label class="filter-item">
+                        <span>Até Ano:</span>
+                        <select id="end-yearFilter">
+                            <!-- <option value="">Todos</option> -->
+                        </select>
+                    </label>
+                    <label class="filter-item">
+                        <span>Mês:</span>
+                        <select id="end-monthFilter">
+                            <!-- <option value="">Todos</option> -->
+                        </select>
+                    </label>
+                </div>
+            </div>
+            
+            <button id="filterButton" class="filter-button">Filtrar</button>
         </div>
         <!-- Header Cards -->
         <div class="stats-grid">
