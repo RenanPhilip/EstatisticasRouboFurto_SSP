@@ -49,7 +49,7 @@ async function carregarDados(data) {
     criarTodosGraficos(data);
 
     if (dadosMapa && dadosMapa.length > 0) {
-      inicializarMapa();
+      inicializarMapa(todosDados);
     }
 
     document.querySelectorAll('select').forEach(select => {
@@ -478,8 +478,8 @@ function criarGraficoPeriodo() {
 
 let markerLayers = {};
 
-function inicializarMapa() {
-  // mapInstance = L.map('map').setView([-23.54731471, -46.63181545], 100);
+function inicializarMapa(data) {
+
   mapInstance = L.map('map').setView([-23.55029, -46.63397], 5.5);
 
   L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
@@ -487,18 +487,36 @@ function inicializarMapa() {
     maxZoom: 18
   }).addTo(mapInstance);
 
-  // Inicializa os grupos de marcadores vazios
+  // Inicializa os grupos de clusters com opções de performance
   markerLayers = {
-    'ROUBO': L.layerGroup().addTo(mapInstance),
-    'FURTO': L.layerGroup().addTo(mapInstance),
-    'ENCONTRADO': L.layerGroup().addTo(mapInstance),
-    'OUTROS': L.layerGroup().addTo(mapInstance)
+    'ROUBO': L.markerClusterGroup({
+      chunkedLoading: true,  // Essencial para >1M pontos: adiciona em lotes
+      maxClusterRadius: 250,  // Raio menor para mais clusters
+      disableClusteringAtZoom: 15  // Desagrupa no zoom 15+
+    }).addTo(mapInstance),
+    'FURTO': L.markerClusterGroup({
+      chunkedLoading: true,
+      maxClusterRadius: 250,
+      disableClusteringAtZoom: 15
+    }).addTo(mapInstance),
+    'ENCONTRADO': L.markerClusterGroup({
+      chunkedLoading: true,
+      maxClusterRadius: 250,
+      disableClusteringAtZoom: 15
+    }).addTo(mapInstance),
+    'OUTROS': L.markerClusterGroup({
+      chunkedLoading: true,
+      maxClusterRadius: 250,
+      disableClusteringAtZoom: 15
+    }).addTo(mapInstance)
   };
-
-  atualizarMapa();
+  // Adicionar o filter aqui
+  mapDots = data
+  // console.log('mapDots', mapDots);
+  atualizarMapa(mapDots);
 }
 
-function atualizarMapa() {
+function atualizarMapa(data) {
   if (!mapInstance || !dadosMapa) return;
 
   // Limpa os layers existentes
@@ -509,10 +527,26 @@ function atualizarMapa() {
   const showEncontrado = document.getElementById('mapEncontrado').checked;
   const showOutros = document.getElementById('mapOutros').checked;
 
-  dadosMapa.forEach(ocorrencia => {
-    if (!ocorrencia.LONGITUDE || !ocorrencia.LATITUDE) return;
+  // Arrays para coletar marcadores por tipo (otimização para addLayers)
+  const markersByType = {
+    'ROUBO': [],
+    'FURTO': [],
+    'ENCONTRADO': [],
+    'OUTROS': []
+  };
+
+  data.forEach(ocorrencia => {
+    if (
+      (!ocorrencia.LONGITUDE || !ocorrencia.LATITUDE) ||
+      (ocorrencia.LONGITUDE == '0' || ocorrencia.LATITUDE == '0')
+    ) return;
+
     const latStr = ocorrencia.LATITUDE.replace(',', '.');
     const lonStr = ocorrencia.LONGITUDE.replace(',', '.');
+
+    const lat = parseFloat(latStr);
+    const lon = parseFloat(lonStr);
+    if (isNaN(lat) || isNaN(lon)) return;  // Validação extra para coords inválidas
 
     let tipo = 'OUTROS';
     let cor = '#00bbffff'; // Azul padrão para Outros/Não-classificado
@@ -542,7 +576,7 @@ function atualizarMapa() {
       return;
     }
 
-    const marker = L.circleMarker([parseFloat(latStr), parseFloat(lonStr)], {
+    const marker = L.circleMarker([lat, lon], {
       radius: 5,
       fillColor: cor,
       color: '#fff',
@@ -557,12 +591,19 @@ function atualizarMapa() {
       <strong>Veículo:</strong> ${ocorrencia.DESCR_MARCA_VEICULO || 'N/A'} (${ocorrencia.DESCR_TIPO_VEICULO || 'N/A'})<br>
       <strong>Cor:</strong> ${ocorrencia.DESC_COR_VEICULO || 'N/A'}<br>
       <strong>Data:</strong> ${ocorrencia.DATA_OCORRENCIA_BO || 'N/A'}<br>
-      <strong>Latuutude:</strong> ${latStr || 'N/A'}<br>
+      <strong>Latitude:</strong> ${latStr || 'N/A'}<br>
       <strong>Longitude:</strong> ${lonStr || 'N/A'}
     `);
 
-    // Adiciona ao layer correto
-    markerLayers[tipo]?.addLayer(marker);
+    // Coleta no array
+    markersByType[tipo].push(marker);
+  });
+
+  // Adiciona em lote para cada tipo (usa chunkedLoading internamente)
+  Object.keys(markersByType).forEach(tipo => {
+    if (markersByType[tipo].length > 0) {
+      markerLayers[tipo].addLayers(markersByType[tipo]);
+    }
   });
 }
 
