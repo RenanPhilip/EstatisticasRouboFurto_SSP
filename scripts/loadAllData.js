@@ -1,76 +1,91 @@
 async function getFiles() {
-
   const date = new Date();
-  const mesAtual = date.getMonth()
-  const anoAtual = date.getFullYear()
-  
+  const mesAtual = date.getMonth() + 1;
+  const anoAtual = date.getFullYear();
+
   const quarterMap = { 
-    1 : 1, 2 : 1, 3: 1,
-    4 : 2, 5 : 2, 6: 2,
-    7 : 3, 8 : 3, 9: 3,
-    10: 4, 11: 4, 12: 4
+    1:1,2:1,3:1,
+    4:2,5:2,6:2,
+    7:3,8:3,9:3,
+    10:4,11:4,12:4
   };
   const quarterAtual = quarterMap[mesAtual];
-  
-  iniA = 2020, 
-  iniM = 1
 
-  fimA = anoAtual
-  fimM = quarterAtual
-
+  const iniA = 2020, iniM = 1;
+  const fimA = anoAtual, fimM = quarterAtual;
   const basePath = './data/';
   const files = [];
 
-  // 🔹 Gera a lista de arquivos esperados
-  if (iniA === fimA) {
-    for (let q = iniM; q <= fimM; q++) files.push(`${iniA}_Q${q}.json`);
-  } else {
-    for (let year = iniA; year <= fimA; year++) {
-      if (year === iniA) {
-        for (let q = iniM; q <= 4; q++) files.push(`${year}_Q${q}.json`);
-      } else if (year === fimA) {
-        for (let q = 1; q <= fimM; q++) files.push(`${year}_Q${q}.json`);
-      } else {
-        for (let q = 1; q <= 4; q++) files.push(`${year}_Q${q}.json`);
-      }
-    }
+  // 🔹 Gera lista de arquivos por ano e trimestre
+  for (let year = iniA; year <= fimA; year++) {
+    const startQ = (year === iniA) ? iniM : 1;
+    const endQ = (year === fimA) ? fimM : 4;
+    for (let q = startQ; q <= endQ; q++) files.push(`${year}_Q${q}.json`);
   }
 
-  // 🔥 Faz o carregamento em paralelo
-  const fetchPromises = files.map(async (file) => {
-    const url = `${basePath}${file}`;
-    try {
-      const response = await fetch(url);
-      if (!response.ok) throw new Error('Arquivo não encontrado');
-      const data = await response.json();
-      // console.log(`✅ Carregado: ${file}`);
-      return { file, data };
-    } catch (err) {
-      console.warn(`⚠️ Ignorado: ${file} (${err.message})`);
-      return null;
+  // 🔹 Controla o número de downloads simultâneos
+  async function limitedFetchAll(tasks, limit = 4) {
+    const results = [];
+    const executing = [];
+    for (const task of tasks) {
+      const p = task().then(r => results.push(r));
+      executing.push(p);
+      if (executing.length >= limit) await Promise.race(executing);
     }
-  });
+    await Promise.all(executing);
+    return results;
+  }
 
-  const results = await Promise.all(fetchPromises);
-  const loadedData = results.filter(Boolean);
+  // 🔹 Faz o fetch e processamento de cada arquivo
+  const results = await limitedFetchAll(
+    files.map(file => async () => {
+      const url = `${basePath}${file}`;
+      try {
+        const response = await fetch(url);
+        if (!response.ok) throw new Error('Arquivo não encontrado');
+        const data = await response.json();
 
-  // 🔹 Ordena pelo nome do arquivo (ano e trimestre)
-  loadedData.sort((a, b) => {
-    const [yearA, quarterA] = a.file.match(/(\d{4})_Q(\d)/).slice(1).map(Number);
-    const [yearB, quarterB] = b.file.match(/(\d{4})_Q(\d)/).slice(1).map(Number);
-    if (yearA !== yearB) return yearA - yearB;
-    return quarterA - quarterB;
-  });
+        // 🧩 Converte e ordena os dados por data (DD/MM/YYYY)
+        const processed = data.map(item => {
+          const [dia, mes, ano] = item.DATA_OCORRENCIA_BO.split('/').map(Number);
+          item._dataObj = new Date(ano, mes - 1, dia); // campo auxiliar
+          return item;
+        }).sort((a, b) => a._dataObj - b._dataObj);
+
+        return { file, data: processed };
+      } catch (err) {
+        console.warn(`⚠️ Ignorado: ${file} (${err.message})`);
+        return null;
+      }
+    }),
+    4
+  );
+
+  // 🔹 Ordena os arquivos por ano/trimestre antes de unir
+  const loadedData = results
+    .filter(Boolean)
+    .sort((a, b) => {
+      const [yearA, qA] = a.file.match(/(\d{4})_Q(\d)/).slice(1).map(Number);
+      const [yearB, qB] = b.file.match(/(\d{4})_Q(\d)/).slice(1).map(Number);
+      return yearA - yearB || qA - qB;
+    });
 
   console.log('📂 Arquivos carregados:', loadedData.map(f => f.file));
   return loadedData;
 }
 
-document.addEventListener('DOMContentLoaded', async () => {
+// 🔹 Executa automaticamente ao carregar o script
+(async () => {
   console.time('⏱ Tempo de carregamento');
+  
   const dados = await getFiles();
-  todosDados = dados.flatMap(f => f.data);
+  
+  // ✅ Junta todos os dados já ordenados e prontos para filtro
+  window.todosDados = dados.flatMap(f => f.data);
+
   console.timeEnd('⏱ Tempo de carregamento');
-  console.log('✅ Dados prontos em ordem:', todosDados);
-  carregarDados();
-});
+  console.log('✅ Dados prontos em ordem:', todosDados.length);
+
+  // ⚙️ Chama a função principal
+  if (typeof carregarDados === 'function') carregarDados(todosDados);
+})();

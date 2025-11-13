@@ -8,7 +8,7 @@ let charts = {};
 Chart.defaults.color = '#94a3b8';
 Chart.defaults.borderColor = '#334155';
 
-async function carregarDados() {
+async function carregarDados(data) {
   try {
 
     // Carrega estatísticas gerais
@@ -38,15 +38,15 @@ async function carregarDados() {
     }
 
     // Atualiza interface do cabeçalho
-    const dataAtualizacao = new Date(dadosEstatisticas.ultimaAtualizacao);
+    // const ultimoDado = data[data.length - 1].DATA_OCORRENCIA_BO;
     document.getElementById('updateInfo').innerHTML = `
-      <strong>Última atualização:</strong> ${dataAtualizacao.toLocaleDateString('pt-BR')} às ${dataAtualizacao.toLocaleTimeString('pt-BR')}
-      <br><strong>Total de registros:</strong> ${dadosEstatisticas.totalRegistros.toLocaleString('pt-BR')}
+      <strong>Ocorrencias de :</strong> ${todosDados[0].DATA_OCORRENCIA_BO} <strong> até :</strong> ${todosDados[todosDados.length - 1].DATA_OCORRENCIA_BO}
+      <br><strong>Total de registros:</strong> ${todosDados.length.toLocaleString('PT-BR')}
     `;
 
-    popularFiltros();
-    atualizarCards();
-    criarTodosGraficos();
+    popularFiltros(data);
+    atualizarCards(data);
+    criarTodosGraficos(data);
 
     if (dadosMapa && dadosMapa.length > 0) {
       inicializarMapa();
@@ -73,6 +73,13 @@ async function carregarDados() {
 
 //! melhorar isso (FILTROS)
 function popularFiltros() {
+  // Meses para popular
+  const meses = [
+    'Jan', 'Fev', 'Mar',
+    'Abr', 'Mai', 'Jun',
+    'Jul', 'Ago', 'Set',
+    'Out', 'Nov', 'Dez'
+  ];
 
   // Popular Filtros de inicio Ano
   const anos = Object.keys(dadosEstatisticas.porAno).sort((a, b) => b - a);
@@ -83,14 +90,6 @@ function popularFiltros() {
     option.textContent = ano;
     yearFilter.appendChild(option);
   });
-
-  // Meses para popular
-  const meses = [
-    'Jan', 'Fev', 'Mar',
-    'Abr', 'Mai', 'Jun',
-    'Jul', 'Ago', 'Set',
-    'Out', 'Nov', 'Dez'
-  ];
 
   // Popular filtros de inicio Mes
   const monthFilter = document.getElementById('monthFilter');
@@ -109,7 +108,7 @@ function popularFiltros() {
     option.textContent = ano;
     endYearFilter.appendChild(option);
   });
-
+  
   // Popular Filtros de Fim Mes
   const endMonthFilter = document.getElementById('end-monthFilter');
   meses.forEach(mes => {
@@ -120,23 +119,23 @@ function popularFiltros() {
   })
 }
 
-//! Criar função de aplicar filtros
-// function aplicarFiltros() {
-//   const filtrarDados = document.getElementById('filterButton');
-//   filtrarDados.addEventListener('click', async () => {
-//     console.log('click, click, click click...')
-//   });
-// }
+function aplicarFiltros() {
+  const anoIni = document.getElementById('yearFilter').value;
+  const mesIni = document.getElementById('monthFilter').value;
+  const anoFim = document.getElementById('end-yearFilter').value;
+  const mesFim = document.getElementById('end-monthFilter').value;
+
+}
+
 
 // Cards de cabeçalho
-function atualizarCards() {
-  const totalGeral = dadosEstatisticas.totalRegistros || 'N/A';
-  const anosAnalisados = `${Object.keys(dadosEstatisticas.porAno)[Object.keys(dadosEstatisticas.porAno).length - 1]} - ${Object.keys(dadosEstatisticas.porAno)[0]}` || 'N/A';
-
+function atualizarCards(data) {
+  const totalGeral = data.length;
+  const anosAnalisados = `${data[0].DATA_OCORRENCIA_BO.split('/')[2]} - ${data[data.length - 1].DATA_OCORRENCIA_BO.split('/')[2]}`;
   const totalFlagrantes = dadosEstatisticas.porFlagrante.sim + dadosEstatisticas.porFlagrante.nao;
   const percFlagrantes = totalFlagrantes > 0 ? ((dadosEstatisticas.porFlagrante.sim / totalFlagrantes) * 100).toFixed(1) : 0;
 
-  document.getElementById('totalGeral').textContent =  todosDados.length.toLocaleString('pt-BR')// || totalGeral.toLocaleString('pt-BR');
+  document.getElementById('totalGeral').textContent =  totalGeral.toLocaleString('pt-BR')  || 'N/A';
   document.getElementById('anosAnalisados').textContent = anosAnalisados.toLocaleString('pt-BR') || 'N/A';
   document.getElementById('totalMunicipios').textContent = Object.keys(dadosEstatisticas.porMunicipio).length;
   document.getElementById('totalFlagrantes').textContent = `${percFlagrantes}%`;
@@ -565,13 +564,6 @@ function atualizarMapa() {
     // Adiciona ao layer correto
     markerLayers[tipo]?.addLayer(marker);
   });
-}
-
-function aplicarFiltros() {
-  // Por enquanto, apenas loga. A lógica de filtragem de gráficos é mais complexa e
-  // exigiria a re-agregação dos dados. Como o usuário não enviou o código de
-  // re-agregação, vamos focar no mapa e no layout.
-  console.log('Filtros de seleção alterados. Para re-filtrar gráficos, a lógica de re-agregação precisa ser implementada.');
 }
 
 function criarGraficoDiaSemana() {
